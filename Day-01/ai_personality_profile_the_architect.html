@@ -1,0 +1,503 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  .profile-root {
+    font-family: 'Space Grotesk', sans-serif;
+    background: #0a0a0f;
+    color: #e8e6f0;
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(83,74,183,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(83,74,183,0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .accent-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #534AB7, #1D9E75, transparent);
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    padding: 2rem 1.5rem 2.5rem;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 0.5px solid rgba(83,74,183,0.3);
+  }
+
+  .avatar-frame {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(83,74,183,0.6);
+    background: linear-gradient(135deg, #1a1830 0%, #0f1a24 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .avatar-frame svg {
+    width: 52px;
+    height: 52px;
+  }
+
+  .avatar-scan {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(29,158,117,0.6), transparent);
+    animation: scan 2.5s ease-in-out infinite;
+    top: 0;
+  }
+
+  @keyframes scan {
+    0% { top: 0; opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  .header-text { flex: 1; }
+
+  .title-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #1D9E75;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .name {
+    font-size: 26px;
+    font-weight: 700;
+    color: #f0eeff;
+    margin: 0 0 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: rgba(200,196,240,0.55);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .badge-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  .badge-purple { background: rgba(83,74,183,0.2); color: #AFA9EC; border: 0.5px solid rgba(83,74,183,0.4); }
+  .badge-teal { background: rgba(29,158,117,0.15); color: #5DCAA5; border: 0.5px solid rgba(29,158,117,0.35); }
+  .badge-coral { background: rgba(216,90,48,0.15); color: #F0997B; border: 0.5px solid rgba(216,90,48,0.35); }
+
+  .cinematic-quote {
+    background: rgba(83,74,183,0.08);
+    border-left: 2px solid #534AB7;
+    border-radius: 0 8px 8px 0;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.75rem;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: rgba(232,230,240,0.8);
+    font-style: italic;
+    position: relative;
+  }
+
+  .cinematic-quote::before {
+    content: '"';
+    font-size: 40px;
+    color: rgba(83,74,183,0.3);
+    position: absolute;
+    top: -6px;
+    left: 8px;
+    line-height: 1;
+    font-family: serif;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: rgba(175,169,236,0.5);
+    margin-bottom: 10px;
+    margin-top: 1.5rem;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: rgba(255,255,255,0.03);
+    border: 0.5px solid rgba(83,74,183,0.2);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #AFA9EC;
+    display: block;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: rgba(200,196,240,0.45);
+    line-height: 1.3;
+  }
+
+  .attr-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .attr-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .attr-name {
+    font-size: 12px;
+    color: rgba(200,196,240,0.6);
+    width: 90px;
+    flex-shrink: 0;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .attr-bar-bg {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .attr-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  .bar-purple { background: #534AB7; }
+  .bar-teal { background: #1D9E75; }
+  .bar-coral { background: #D85A30; }
+  .bar-amber { background: #BA7517; }
+
+  .attr-score {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(232,230,240,0.7);
+    width: 28px;
+    text-align: right;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .info-card {
+    background: rgba(255,255,255,0.025);
+    border: 0.5px solid rgba(83,74,183,0.2);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .info-card-label {
+    font-size: 9px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #1D9E75;
+    margin-bottom: 7px;
+  }
+
+  .info-card-text {
+    font-size: 13px;
+    color: rgba(232,230,240,0.75);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .career-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 1.5rem;
+  }
+
+  .career-tag {
+    background: rgba(29,158,117,0.1);
+    border: 0.5px solid rgba(29,158,117,0.3);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #5DCAA5;
+    font-weight: 500;
+  }
+
+  .improve-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .improve-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: rgba(216,90,48,0.05);
+    border: 0.5px solid rgba(216,90,48,0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .improve-dot {
+    width: 6px;
+    height: 6px;
+    background: #D85A30;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .improve-text {
+    font-size: 13px;
+    color: rgba(232,230,240,0.7);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .footer-bar {
+    border-top: 0.5px solid rgba(83,74,183,0.2);
+    padding-top: 1rem;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: rgba(200,196,240,0.3);
+    letter-spacing: 1px;
+  }
+
+  .footer-right {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: rgba(83,74,183,0.5);
+  }
+
+  .pulse-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #1D9E75;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+</style>
+
+<div class="profile-root">
+  <div class="grid-bg"></div>
+  <div class="accent-line"></div>
+  <div class="content">
+
+    <div class="header">
+      <div class="avatar-frame">
+        <div class="avatar-scan"></div>
+        <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="26" cy="18" r="9" fill="rgba(83,74,183,0.25)" stroke="#534AB7" stroke-width="1"/>
+          <path d="M26 10 L26 26" stroke="#AFA9EC" stroke-width="0.8" opacity="0.5"/>
+          <path d="M18 18 L34 18" stroke="#AFA9EC" stroke-width="0.8" opacity="0.5"/>
+          <path d="M10 38 C10 30 42 30 42 38" fill="rgba(29,158,117,0.15)" stroke="#1D9E75" stroke-width="1"/>
+          <circle cx="26" cy="18" r="4" fill="#534AB7" opacity="0.8"/>
+          <circle cx="26" cy="18" r="2" fill="#AFA9EC"/>
+          <rect x="22" y="42" width="8" height="1.5" rx="0.75" fill="#534AB7" opacity="0.6"/>
+          <rect x="14" y="45" width="24" height="1" rx="0.5" fill="rgba(83,74,183,0.3)"/>
+          <circle cx="10" cy="20" r="1.5" fill="#1D9E75" opacity="0.7"/>
+          <circle cx="42" cy="20" r="1.5" fill="#1D9E75" opacity="0.7"/>
+          <circle cx="10" cy="30" r="1" fill="rgba(83,74,183,0.5)"/>
+          <circle cx="42" cy="30" r="1" fill="rgba(83,74,183,0.5)"/>
+          <path d="M11.5 20 L22 18" stroke="rgba(29,158,117,0.3)" stroke-width="0.5"/>
+          <path d="M40.5 20 L30 18" stroke="rgba(29,158,117,0.3)" stroke-width="0.5"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <div class="title-tag"><span class="pulse-dot"></span>AI Personality Profile · Active</div>
+        <h1 class="name">The Architect</h1>
+        <p class="subtitle">Visionary Builder in Beta · Varanasi → Everywhere</p>
+        <div class="badge-row">
+          <span class="badge badge-purple">Power Prompter</span>
+          <span class="badge badge-teal">Creative Director</span>
+          <span class="badge badge-coral">Gen-Z Builder</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cinematic-quote">
+      A builder from the Ganges delta who codes with one hand and world-builds with the other. Dual monitors glow blue against a dark room. Tabs open: research paper, startup pitch, AI conversation, half-written future. Doesn't wait for the industry — already two versions ahead.
+    </div>
+
+    <div class="section-label">Core Stats</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-value" style="color:#AFA9EC;">97</span>
+        <div class="stat-label">Prompt Density</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" style="color:#5DCAA5;">91</span>
+        <div class="stat-label">Vision Clarity</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" style="color:#F0997B;">88</span>
+        <div class="stat-label">Aesthetic IQ</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" style="color:#FAC775;">74</span>
+        <div class="stat-label">Iteration Speed</div>
+      </div>
+    </div>
+
+    <div class="section-label">Attribute Breakdown</div>
+    <div class="attr-list" style="margin-bottom:1.5rem;">
+      <div class="attr-row">
+        <span class="attr-name">Ambition</span>
+        <div class="attr-bar-bg"><div class="attr-bar bar-purple" style="width:96%"></div></div>
+        <span class="attr-score">96</span>
+      </div>
+      <div class="attr-row">
+        <span class="attr-name">Creativity</span>
+        <div class="attr-bar-bg"><div class="attr-bar bar-teal" style="width:92%"></div></div>
+        <span class="attr-score">92</span>
+      </div>
+      <div class="attr-row">
+        <span class="attr-name">Systems Think</span>
+        <div class="attr-bar-bg"><div class="attr-bar bar-purple" style="width:89%"></div></div>
+        <span class="attr-score">89</span>
+      </div>
+      <div class="attr-row">
+        <span class="attr-name">Precision</span>
+        <div class="attr-bar-bg"><div class="attr-bar bar-amber" style="width:72%"></div></div>
+        <span class="attr-score">72</span>
+      </div>
+      <div class="attr-row">
+        <span class="attr-name">Iteration</span>
+        <div class="attr-bar-bg"><div class="attr-bar bar-coral" style="width:68%"></div></div>
+        <span class="attr-score">68</span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="info-card">
+        <div class="info-card-label">Working Style</div>
+        <p class="info-card-text">High-intent bursts. Directs AI like a film crew — vibe, format, and deliverable in one shot. Thinks in systems and aesthetics simultaneously.</p>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Learning Style</div>
+        <p class="info-card-text">Visual-first, outcome-oriented. Learns by doing and showing. Fast decisions when the vision is crystal clear.</p>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Strength</div>
+        <p class="info-card-text">Holistic thinking. Cross-domain curiosity. Can hold tech, culture, and aesthetics in one mental frame without dropping any.</p>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">What Makes You Different</div>
+        <p class="info-card-text">Most users ask AI for answers. You ask for <em>experiences</em>. You think about how things land — not just whether they work.</p>
+      </div>
+    </div>
+
+    <div class="section-label">Best Career Paths</div>
+    <div class="career-tags">
+      <span class="career-tag">AI Product Builder</span>
+      <span class="career-tag">Startup Founder</span>
+      <span class="career-tag">Creative Technologist</span>
+      <span class="career-tag">AI Researcher</span>
+      <span class="career-tag">Prompt Engineer</span>
+      <span class="career-tag">Product Designer</span>
+      <span class="career-tag">Developer Advocate</span>
+    </div>
+
+    <div class="section-label">To Become Elite</div>
+    <div class="improve-list">
+      <div class="improve-item">
+        <div class="improve-dot"></div>
+        <p class="improve-text">Master prompt iteration — craft the first prompt fast, then refine in targeted follow-ups instead of expecting perfection in one shot.</p>
+      </div>
+      <div class="improve-item">
+        <div class="improve-dot"></div>
+        <p class="improve-text">Separate ideation prompts from execution prompts. Let AI brainstorm broadly first, then constrain for output.</p>
+      </div>
+      <div class="improve-item">
+        <div class="improve-dot"></div>
+        <p class="improve-text">Build feedback loops. Evaluate AI outputs systematically, not just by first impression. Precision > aesthetics at the final mile.</p>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <div class="footer-left">GENERATED · CLAUDE AI · 2026</div>
+      <div class="footer-right">THE_ARCHITECT_v1.0</div>
+    </div>
+
+  </div>
+</div>
