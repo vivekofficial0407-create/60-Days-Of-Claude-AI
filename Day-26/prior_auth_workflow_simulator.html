@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prior Authorization Workflow Simulator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; min-height: 100vh; }
+  
+  .header { background: #1a365d; color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 1.1rem; font-weight: 600; }
+  .header-actions { display: flex; gap: 0.5rem; }
+  
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; padding: 0.75rem 1rem; background: white; border-bottom: 1px solid #e2e8f0; }
+  .metric { text-align: center; }
+  .metric-val { font-size: 1.4rem; font-weight: 700; color: #2b6cb0; }
+  .metric-label { font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
+  
+  .main { display: flex; gap: 0; height: calc(100vh - 130px); overflow: hidden; }
+  
+  .lanes { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; overflow: hidden; }
+  
+  .lane { display: flex; flex-direction: column; border-right: 1px solid #e2e8f0; overflow: hidden; }
+  .lane:last-child { border-right: none; }
+  .lane-header { padding: 0.6rem 0.75rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.4rem; }
+  .lane-patient .lane-header { background: #ebf8ff; color: #2b6cb0; border-bottom: 2px solid #90cdf4; }
+  .lane-provider .lane-header { background: #f0fff4; color: #276749; border-bottom: 2px solid #9ae6b4; }
+  .lane-payer .lane-header { background: #faf5ff; color: #553c9a; border-bottom: 2px solid #d6bcfa; }
+  
+  .lane-body { flex: 1; overflow-y: auto; padding: 0.5rem; min-height: 100px; transition: background 0.2s; }
+  .lane-body.drag-over { background: #bee3f8; outline: 2px dashed #3182ce; }
+  
+  .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; cursor: grab; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: transform 0.1s, box-shadow 0.1s; user-select: none; position: relative; }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+  .card.dragging { opacity: 0.4; transform: scale(0.98); cursor: grabbing; }
+  .card-type { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.35rem; }
+  .card-title { font-size: 0.85rem; font-weight: 600; color: #2d3748; margin-bottom: 0.25rem; }
+  .card-sub { font-size: 0.75rem; color: #718096; }
+  .card-badge { display: inline-block; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 20px; text-transform: uppercase; margin-top: 0.3rem; }
+  .badge-urgent { background: #fed7d7; color: #c53030; }
+  .badge-routine { background: #e2e8f0; color: #4a5568; }
+  .badge-stat { background: #feebc8; color: #c05621; }
+  
+  .sidebar { width: 260px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
+  
+  .panel { border-bottom: 1px solid #e2e8f0; }
+  .panel-header { padding: 0.6rem 0.75rem; font-size: 0.75rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.05em; background: #f7fafc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  .panel-body { padding: 0.75rem; overflow-y: auto; }
+  
+  .doc-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.2rem; border-bottom: 1px solid #f0f0f0; font-size: 0.78rem; cursor: pointer; }
+  .doc-item:last-child { border-bottom: none; }
+  .doc-check { width: 16px; height: 16px; border: 2px solid #cbd5e0; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .doc-check.checked { background: #38a169; border-color: #38a169; }
+  .doc-check.checked::after { content: '✓'; color: white; font-size: 10px; }
+  .doc-name { color: #4a5568; }
+  .doc-required { color: #e53e3e; font-size: 0.65rem; margin-left: auto; }
+  
+  .log { flex: 1; overflow-y: auto; padding: 0.5rem; }
+  .log-entry { font-size: 0.72rem; color: #4a5568; padding: 0.35rem 0.4rem; border-left: 3px solid #e2e8f0; margin-bottom: 0.35rem; background: #f7fafc; border-radius: 0 4px 4px 0; }
+  .log-entry.success { border-color: #38a169; background: #f0fff4; }
+  .log-entry.warning { border-color: #ed8936; background: #fffaf0; }
+  .log-entry.danger { border-color: #e53e3e; background: #fff5f5; }
+  .log-entry.info { border-color: #3182ce; background: #ebf8ff; }
+  .log-time { font-size: 0.65rem; color: #a0aec0; }
+  
+  .btn { padding: 0.4rem 0.75rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: all 0.15s; }
+  .btn-primary { background: #2b6cb0; color: white; }
+  .btn-primary:hover { background: #2c5282; }
+  .btn-success { background: #276749; color: white; }
+  .btn-success:hover { background: #22543d; }
+  .btn-danger { background: #c53030; color: white; }
+  .btn-danger:hover { background: #9b2c2c; }
+  .btn-gray { background: #e2e8f0; color: #4a5568; }
+  .btn-gray:hover { background: #cbd5e0; }
+  .btn-sm { padding: 0.3rem 0.55rem; font-size: 0.72rem; }
+  
+  .outcome-banner { display: none; padding: 1rem; border-radius: 8px; margin: 0.75rem; text-align: center; animation: fadeIn 0.4s ease; }
+  .outcome-banner.show { display: block; }
+  .outcome-banner h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .outcome-banner p { font-size: 0.78rem; }
+  .outcome-approved { background: #f0fff4; border: 2px solid #38a169; color: #276749; }
+  .outcome-pending { background: #fffaf0; border: 2px solid #ed8936; color: #c05621; }
+  .outcome-denied { background: #fff5f5; border: 2px solid #e53e3e; color: #c53030; }
+  .outcome-appeal { background: #faf5ff; border: 2px solid #805ad5; color: #553c9a; }
+  
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .empty-lane { text-align: center; padding: 2rem 1rem; color: #a0aec0; font-size: 0.78rem; }
+  .empty-lane .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  
+  .scenario-select { width: 100%; padding: 0.4rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.78rem; color: #4a5568; background: white; cursor: pointer; }
+  
+  .progress-bar { height: 4px; background: #e2e8f0; border-radius: 2px; margin-top: 0.4rem; }
+  .progress-fill { height: 100%; border-radius: 2px; background: #38a169; transition: width 0.3s; }
+  
+  .action-buttons { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.75rem; border-top: 1px solid #e2e8f0; }
+  
+  .step-explanation { background: #ebf8ff; border: 1px solid #90cdf4; border-radius: 6px; padding: 0.6rem 0.75rem; margin: 0.5rem; font-size: 0.75rem; color: #2b6cb0; display: none; }
+  .step-explanation.show { display: block; animation: fadeIn 0.3s ease; }
+  
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #f1f1f1; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏥 Prior Authorization Workflow Simulator</h1>
+  <div class="header-actions">
+    <select class="scenario-select" id="scenarioSelect" style="width:160px;">
+      <option value="">Select scenario...</option>
+      <option value="mri">MRI Scan</option>
+      <option value="surgery">Surgery</option>
+      <option value="medication">Specialty Medication</option>
+      <option value="inpatient">Inpatient Admission</option>
+    </select>
+    <button class="btn btn-primary" onclick="startNewPatient()">New Patient</button>
+    <button class="btn btn-gray btn-sm" onclick="restartSimulation()">Restart</button>
+  </div>
+</div>
+
+<div class="metrics">
+  <div class="metric">
+    <div class="metric-val" id="metricDays">0</div>
+    <div class="metric-label">Days Elapsed</div>
+  </div>
+  <div class="metric">
+    <div class="metric-val" id="metricScore">100</div>
+    <div class="metric-label">Efficiency Score</div>
+  </div>
+  <div class="metric">
+    <div class="metric-val" id="metricDocs">0/0</div>
+    <div class="metric-label">Docs Gathered</div>
+  </div>
+  <div class="metric">
+    <div class="metric-val" id="metricStatus">Idle</div>
+    <div class="metric-label">Status</div>
+  </div>
+</div>
+
+<div class="step-explanation" id="stepExplanation"></div>
+
+<div class="main">
+  <div class="lanes">
+    <div class="lane lane-patient">
+      <div class="lane-header">👤 Patient</div>
+      <div class="lane-body" id="lanePatient" ondragover="handleDragOver(event)" ondrop="handleDrop(event,'patient')" ondragleave="handleDragLeave(event)">
+        <div class="empty-lane"><div class="icon">+</div>Select a scenario and click "New Patient" to begin</div>
+      </div>
+    </div>
+    <div class="lane lane-provider">
+      <div class="lane-header">🩺 Provider</div>
+      <div class="lane-body" id="laneProvider" ondragover="handleDragOver(event)" ondrop="handleDrop(event,'provider')" ondragleave="handleDragLeave(event)">
+        <div class="empty-lane"><div class="icon">→</div>Drag patient card here to initiate request</div>
+      </div>
+    </div>
+    <div class="lane lane-payer">
+      <div class="lane-header">🏢 Payer</div>
+      <div class="lane-body" id="lanePayer" ondragover="handleDragOver(event)" ondrop="handleDrop(event,'payer')" ondragleave="handleDragLeave(event)">
+        <div class="empty-lane"><div class="icon">📋</div>Drag to payer after provider review</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-header" onclick="togglePanel('docPanel')">📄 Document Checklist <span id="docToggle">▾</span></div>
+      <div class="panel-body" id="docPanel">
+        <div style="color:#a0aec0; font-size:0.75rem; text-align:center; padding:1rem 0;">Start a case to see required documents</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header" onclick="togglePanel('outcomePanel')">📊 Outcome <span id="outcomeToggle">▾</span></div>
+      <div class="panel-body" id="outcomePanel" style="padding:0;">
+        <div class="outcome-banner" id="outcomeBanner">
+          <h3 id="outcomeTitle">—</h3>
+          <p id="outcomeText">Submit the authorization to see outcome</p>
+        </div>
+        <div style="padding:0.5rem 0.75rem; color:#a0aec0; font-size:0.75rem;" id="outcomePlaceholder">Outcome will appear after submission</div>
+      </div>
+    </div>
+
+    <div style="padding:0.5rem 0.75rem; font-size:0.7rem; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:0.05em; background:#f7fafc; border-bottom:1px solid #e2e8f0;">📝 Activity Log</div>
+    <div class="log" id="activityLog">
+      <div class="log-entry info"><div class="log-time">Ready</div>Select a scenario and start</div>
+    </div>
+
+    <div class="action-buttons" id="actionButtons">
+      <button class="btn btn-success" onclick="submitAuthorization()" id="btnSubmit" disabled>Submit Authorization</button>
+      <button class="btn btn-danger btn-sm" onclick="generateOutcome('appeal')" id="btnAppeal" style="display:none">File Appeal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  mri: {
+    name: 'MRI Brain Scan',
+    icd: 'G35 - Multiple Sclerosis',
+    cpt: '70553',
+    urgency: 'routine',
+    cost: '$1,200',
+    docs: [
+      { id:'d1', name:'Referral letter', required:true },
+      { id:'d2', name:'Clinical notes (3 months)', required:true },
+      { id:'d3', name:'Previous imaging reports', required:false },
+      { id:'d4', name:'Neurologist consultation', required:true },
+      { id:'d5', name:'Insurance card copy', required:false },
+    ],
+    steps: {
+      patient: 'Patient initiates the process. They contact their primary care provider and report symptoms. A referral for MRI is generated.',
+      provider: 'Provider reviews the clinical necessity. They compile diagnosis codes, treatment history, and attach supporting documentation before submitting.',
+      payer: 'Payer (insurance) reviews medical necessity criteria. They check against coverage policy and determine if the scan qualifies for approval.',
+    },
+    outcomes: { approval:0.65, pending:0.20, denial:0.10, appeal:0.05 }
+  },
+  surgery: {
+    name: 'Orthopedic Surgery',
+    icd: 'M17.11 - Osteoarthritis knee',
+    cpt: '27447',
+    urgency: 'urgent',
+    cost: '$28,000',
+    docs: [
+      { id:'d1', name:'Surgical pre-authorization form', required:true },
+      { id:'d2', name:'Conservative treatment records', required:true },
+      { id:'d3', name:'X-rays and MRI reports', required:true },
+      { id:'d4', name:'Surgeon credentials', required:false },
+      { id:'d5', name:'Facility accreditation', required:false },
+      { id:'d6', name:'Anesthesia consult note', required:true },
+    ],
+    steps: {
+      patient: 'Patient has exhausted conservative treatments. They experience severe functional impairment and request surgical intervention from their orthopedic surgeon.',
+      provider: 'Orthopedic surgeon documents failed conservative treatments (PT, injections, NSAIDs) and submits a clinical necessity letter with imaging evidence.',
+      payer: 'Payer applies Interqual or Milliman criteria for surgical necessity. Reviews prior treatment documentation and imaging before rendering a decision.',
+    },
+    outcomes: { approval:0.55, pending:0.25, denial:0.15, appeal:0.05 }
+  },
+  medication: {
+    name: 'Specialty Medication',
+    icd: 'M06.9 - Rheumatoid Arthritis',
+    cpt: 'J0135 (Adalimumab)',
+    urgency: 'stat',
+    cost: '$4,500/mo',
+    docs: [
+      { id:'d1', name:'Step therapy documentation', required:true },
+      { id:'d2', name:'Lab results (CRP, ESR)', required:true },
+      { id:'d3', name:'Rheumatologist letter', required:true },
+      { id:'d4', name:'Prior auth form J0135', required:true },
+      { id:'d5', name:'Pharmacy benefit verification', required:false },
+    ],
+    steps: {
+      patient: 'Patient has failed first-line medications (methotrexate, hydroxychloroquine). Disease activity remains high with significant joint damage progression.',
+      provider: 'Rheumatologist documents step therapy failure, current disease activity scores (DAS28), and submits specialty pharmacy request with clinical justification.',
+      payer: 'PBM or payer reviews step therapy compliance. Checks formulary tier, specialty pharmacy network, and applies clinical criteria for biologic approval.',
+    },
+    outcomes: { approval:0.50, pending:0.20, denial:0.25, appeal:0.05 }
+  },
+  inpatient: {
+    name: 'Inpatient Admission',
+    icd: 'I21.9 - Acute MI',
+    cpt: '99223',
+    urgency: 'stat',
+    cost: '$18,000',
+    docs: [
+      { id:'d1', name:'Emergency admission notes', required:true },
+      { id:'d2', name:'EKG and troponin results', required:true },
+      { id:'d3', name:'Attending physician order', required:true },
+      { id:'d4', name:'Insurance pre-notification', required:true },
+      { id:'d5', name:'Bed assignment record', required:false },
+      { id:'d6', name:'Care coordination plan', required:false },
+    ],
+    steps: {
+      patient: 'Patient presents to ED with chest pain. EKG shows ST elevation. Acute MI is diagnosed and the care team initiates emergent inpatient admission.',
+      provider: 'Hospital care team notifies payer within 24-48 hours of admission (required for most plans). Submits admission review with clinical details.',
+      payer: 'Utilization management team reviews inpatient criteria. Performs concurrent review for ongoing necessity, checks expected length of stay against benchmarks.',
+    },
+    outcomes: { approval:0.75, pending:0.15, denial:0.05, appeal:0.05 }
+  }
+};
+
+let state = {
+  scenario: null,
+  currentCard: null,
+  cardLane: null,
+  days: 0,
+  score: 100,
+  docs: [],
+  submitted: false,
+  dayTimer: null,
+  started: false
+};
+
+let draggedCard = null;
+
+function startNewPatient() {
+  const sel = document.getElementById('scenarioSelect').value;
+  if (!sel) {
+    alert('Please select a scenario first.');
+    return;
+  }
+  state.scenario = SCENARIOS[sel];
+  state.days = 0;
+  state.score = 100;
+  state.submitted = false;
+  state.started = true;
+  state.cardLane = 'patient';
+  state.docs = state.scenario.docs.map(d => ({ ...d, checked: false }));
+
+  if (state.dayTimer) clearInterval(state.dayTimer);
+  state.dayTimer = setInterval(() => {
+    if (state.started && !state.submitted) {
+      state.days++;
+      if (state.days % 3 === 0) state.score = Math.max(0, state.score - 2);
+      updateMetrics();
+    }
+  }, 4000);
+
+  renderCard('patient');
+  renderDocs();
+  updateMetrics();
+  document.getElementById('btnSubmit').disabled = false;
+  document.getElementById('outcomePlaceholder').style.display = 'block';
+  document.getElementById('outcomeBanner').classList.remove('show');
+
+  addLog('🆕 New case started: ' + state.scenario.name, 'info');
+  showExplanation(state.scenario.steps.patient);
+  addLog('Patient lane: ' + state.scenario.steps.patient.substring(0,80) + '...', 'info');
+}
+
+function renderCard(lane) {
+  const sc = state.scenario;
+  const laneEl = document.getElementById('lane' + cap(lane));
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = 'mainCard';
+  card.draggable = true;
+  card.innerHTML = `
+    <div class="card-type" style="color:${laneColor(lane)}">${laneLabel(lane)} Action</div>
+    <div class="card-title">${sc.name}</div>
+    <div class="card-sub">${sc.icd}</div>
+    <div class="card-sub">CPT: ${sc.cpt} | Est. cost: ${sc.cost}</div>
+    <span class="card-badge badge-${sc.urgency}">${sc.urgency}</span>
+    <div style="font-size:0.65rem;color:#a0aec0;margin-top:0.4rem;">Drag to next lane →</div>
+  `;
+  card.addEventListener('dragstart', e => {
+    draggedCard = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    draggedCard = null;
+  });
+
+  ['lanePatient','laneProvider','lanePayer'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+    document.getElementById(id).innerHTML = '<div class="empty-lane" style="font-size:0.72rem;color:#a0aec0;">Drop here</div>';
+  });
+
+  laneEl.innerHTML = '';
+  laneEl.appendChild(card);
+  state.cardLane = lane;
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(e, targetLane) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!draggedCard || !state.started) return;
+
+  const laneOrder = ['patient','provider','payer'];
+  const currentIdx = laneOrder.indexOf(state.cardLane);
+  const targetIdx = laneOrder.indexOf(targetLane);
+
+  if (targetIdx === currentIdx) { addLog('Card already in this lane.', 'warning'); return; }
+  if (targetIdx < currentIdx) { addLog('⚠️ Cannot move backwards in workflow.', 'warning'); state.score = Math.max(0, state.score - 5); updateMetrics(); return; }
+  if (targetIdx > currentIdx + 1) { addLog('⚠️ Skipping steps reduces efficiency.', 'warning'); state.score = Math.max(0, state.score - 10); updateMetrics(); }
+
+  renderCard(targetLane);
+  state.days += laneDelay(targetLane);
+  updateMetrics();
+  addLog('✅ Moved to ' + cap(targetLane) + ' lane', 'success');
+  showExplanation(state.scenario.steps[targetLane]);
+
+  if (targetLane === 'provider') {
+    document.getElementById('metricStatus').textContent = 'In Review';
+    addLog('🩺 Provider reviewing clinical documentation...', 'info');
+    checkDocProgress();
+  }
+  if (targetLane === 'payer') {
+    document.getElementById('metricStatus').textContent = 'With Payer';
+    addLog('🏢 Payer processing authorization request...', 'info');
+    checkDocProgress();
+  }
+}
+
+function laneDelay(lane) {
+  return { patient:0, provider:2, payer:5 }[lane] || 0;
+}
+function laneColor(lane) {
+  return { patient:'#2b6cb0', provider:'#276749', payer:'#553c9a' }[lane];
+}
+function laneLabel(lane) {
+  return { patient:'Patient', provider:'Provider', payer:'Payer' }[lane];
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function renderDocs() {
+  const panel = document.getElementById('docPanel');
+  const req = state.docs.filter(d=>d.required).length;
+  panel.innerHTML = state.docs.map(d => `
+    <div class="doc-item" onclick="toggleDoc('${d.id}')">
+      <div class="doc-check ${d.checked?'checked':''}" id="chk-${d.id}"></div>
+      <span class="doc-name">${d.name}</span>
+      ${d.required ? '<span class="doc-required">REQ</span>' : ''}
+    </div>
+  `).join('') + `
+    <div class="progress-bar" style="margin-top:0.5rem;">
+      <div class="progress-fill" id="docProgress" style="width:0%"></div>
+    </div>
+    <div style="font-size:0.68rem;color:#718096;margin-top:0.3rem;" id="docProgressText">0 of ${req} required docs gathered</div>
+  `;
+  updateDocProgress();
+}
+
+function toggleDoc(id) {
+  if (!state.started) return;
+  const doc = state.docs.find(d=>d.id===id);
+  if (!doc) return;
+  doc.checked = !doc.checked;
+  const chk = document.getElementById('chk-'+id);
+  if (chk) chk.className = 'doc-check' + (doc.checked?' checked':'');
+
+  if (doc.checked) {
+    state.score = Math.min(100, state.score + (doc.required ? 3 : 1));
+    addLog('📄 Document gathered: ' + doc.name, 'success');
+  } else {
+    state.score = Math.max(0, state.score - 2);
+    addLog('📄 Document removed: ' + doc.name, 'warning');
+  }
+  updateDocProgress();
+  updateMetrics();
+}
+
+function updateDocProgress() {
+  if (!state.docs.length) return;
+  const req = state.docs.filter(d=>d.required);
+  const checked = req.filter(d=>d.checked).length;
+  const pct = req.length ? (checked/req.length*100) : 0;
+  const bar = document.getElementById('docProgress');
+  const txt = document.getElementById('docProgressText');
+  if (bar) bar.style.width = pct+'%';
+  if (txt) txt.textContent = `${checked} of ${req.length} required docs gathered`;
+  const total = state.docs.filter(d=>d.checked).length;
+  document.getElementById('metricDocs').textContent = `${total}/${state.docs.length}`;
+}
+
+function checkDocProgress() {
+  const req = state.docs.filter(d=>d.required && !d.checked);
+  if (req.length > 0) {
+    addLog('⚠️ Missing required docs: ' + req.map(d=>d.name).join(', '), 'warning');
+    state.score = Math.max(0, state.score - req.length * 2);
+    updateMetrics();
+  }
+}
+
+function submitAuthorization() {
+  if (!state.started || !state.scenario) { alert('Please start a patient case first.'); return; }
+  if (state.submitted) return;
+
+  if (state.cardLane !== 'payer') {
+    addLog('⚠️ Move the case to the Payer lane before submitting.', 'warning');
+    showExplanation('The authorization must be in the Payer lane before you can submit it. Drag the card to the Payer lane first.');
+    return;
+  }
+
+  const missingReq = state.docs.filter(d=>d.required && !d.checked);
+  if (missingReq.length > 0) {
+    state.score = Math.max(0, state.score - missingReq.length * 5);
+    addLog('⚠️ Submitting with missing docs: -' + (missingReq.length*5) + ' pts', 'warning');
+    updateMetrics();
+  }
+
+  state.submitted = true;
+  state.days += 3;
+  addLog('📨 Authorization submitted to payer!', 'info');
+  showExplanation('Your prior authorization request has been submitted. The payer will review it based on medical necessity criteria. Processing typically takes 3–15 business days depending on urgency and case complexity.');
+  document.getElementById('metricStatus').textContent = 'Submitted';
+  if (state.dayTimer) clearInterval(state.dayTimer);
+
+  setTimeout(() => generateOutcome(), 1800);
+}
+
+function generateOutcome(forceType) {
+  const sc = state.scenario;
+  if (!sc) return;
+
+  let type;
+  if (forceType) {
+    type = forceType;
+  } else {
+    const r = Math.random();
+    let cumulative = 0;
+    for (const [k,v] of Object.entries(sc.outcomes)) {
+      cumulative += v;
+      if (r < cumulative) { type = k; break; }
+    }
+    if (!type) type = 'pending';
+  }
+
+  const outcomes = {
+    approval: {
+      title: '✅ Approved',
+      text: 'Authorization granted. The requested service is medically necessary and covered under the patient\'s plan. Auth #' + Math.floor(Math.random()*9000+1000),
+      cls: 'outcome-approved',
+      log: 'Authorization APPROVED. Service can proceed.',
+      logType: 'success',
+      explanation: 'The payer determined the service meets medical necessity criteria. The provider can now schedule the approved service. Keep the auth number for billing.',
+      scoreBonus: 10
+    },
+    pending: {
+      title: '⏳ Pending Review',
+      text: 'Additional information required. Peer-to-peer review scheduled within 5 business days.',
+      cls: 'outcome-pending',
+      log: 'Authorization PENDING - peer review required',
+      logType: 'warning',
+      explanation: 'The payer needs more information before deciding. A peer-to-peer review between the treating physician and the payer\'s medical director may resolve this. Provide additional clinical justification.',
+      scoreBonus: 0
+    },
+    denial: {
+      title: '❌ Denied',
+      text: 'Authorization denied - does not meet medical necessity criteria. You have the right to appeal within 30 days.',
+      cls: 'outcome-denied',
+      log: 'Authorization DENIED. Appeal rights available.',
+      logType: 'danger',
+      explanation: 'The payer determined the service does not meet their coverage criteria. You can file an appeal by submitting additional clinical evidence, peer-to-peer review, or an independent external review.',
+      scoreBonus: -15
+    },
+    appeal: {
+      title: '📋 Appeal Filed',
+      text: 'Appeal submitted with additional clinical evidence. Decision expected within 30-60 days.',
+      cls: 'outcome-appeal',
+      log: 'APPEAL filed. Awaiting secondary review.',
+      logType: 'info',
+      explanation: 'An appeal initiates a secondary review process. Submit all additional clinical documentation, letters of medical necessity, peer-reviewed literature, and patient-specific factors that support the medical need.',
+      scoreBonus: 5
+    }
+  };
+
+  const outcome = outcomes[type];
+  state.score = Math.max(0, Math.min(100, state.score + outcome.scoreBonus));
+  updateMetrics();
+
+  const banner = document.getElementById('outcomeBanner');
+  const title = document.getElementById('outcomeTitle');
+  const text = document.getElementById('outcomeText');
+  banner.className = 'outcome-banner show ' + outcome.cls;
+  title.textContent = outcome.title;
+  text.textContent = outcome.text;
+  document.getElementById('outcomePlaceholder').style.display = 'none';
+
+  addLog(outcome.log, outcome.logType);
+  showExplanation(outcome.explanation);
+
+  if (type === 'denial' || type === 'pending') {
+    document.getElementById('btnAppeal').style.display = 'block';
+  }
+  document.getElementById('metricStatus').textContent = cap(type);
+}
+
+function showExplanation(text) {
+  const el = document.getElementById('stepExplanation');
+  el.textContent = '💡 ' + text;
+  el.className = 'step-explanation show';
+  setTimeout(() => el.scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
+}
+
+function addLog(msg, type='') {
+  const log = document.getElementById('activityLog');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  const now = new Date();
+  entry.innerHTML = `<div class="log-time">Day ${state.days} • ${now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>${msg}`;
+  log.insertBefore(entry, log.firstChild);
+}
+
+function updateMetrics() {
+  document.getElementById('metricDays').textContent = state.days;
+  document.getElementById('metricScore').textContent = Math.round(state.score);
+  const total = state.docs.length ? state.docs.filter(d=>d.checked).length : 0;
+  document.getElementById('metricDocs').textContent = state.docs.length ? `${total}/${state.docs.length}` : '0/0';
+}
+
+function restartSimulation() {
+  if (state.dayTimer) clearInterval(state.dayTimer);
+  state = { scenario:null, currentCard:null, cardLane:null, days:0, score:100, docs:[], submitted:false, dayTimer:null, started:false };
+  
+  document.getElementById('lanePatient').innerHTML = '<div class="empty-lane"><div class="icon">+</div>Select a scenario and click "New Patient" to begin</div>';
+  document.getElementById('laneProvider').innerHTML = '<div class="empty-lane"><div class="icon">→</div>Drag patient card here to initiate request</div>';
+  document.getElementById('lanePayer').innerHTML = '<div class="empty-lane"><div class="icon">📋</div>Drag to payer after provider review</div>';
+  document.getElementById('docPanel').innerHTML = '<div style="color:#a0aec0;font-size:0.75rem;text-align:center;padding:1rem 0;">Start a case to see required documents</div>';
+  document.getElementById('outcomeBanner').className = 'outcome-banner';
+  document.getElementById('outcomePlaceholder').style.display = 'block';
+  document.getElementById('activityLog').innerHTML = '<div class="log-entry info"><div class="log-time">Ready</div>Select a scenario and start</div>';
+  document.getElementById('stepExplanation').className = 'step-explanation';
+  document.getElementById('btnSubmit').disabled = true;
+  document.getElementById('btnAppeal').style.display = 'none';
+  document.getElementById('metricStatus').textContent = 'Idle';
+  document.getElementById('scenarioSelect').value = '';
+  updateMetrics();
+}
+
+function togglePanel(id) {
+  const panel = document.getElementById(id);
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
+</script>
+</body>
+</html>
