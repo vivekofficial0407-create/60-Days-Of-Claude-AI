@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prior Authorization Story Simulator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,600;1,400&display=swap');
+  
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #f0f4f8; }
+
+  .lora { font-family: 'Lora', serif; }
+
+  .chat-bubble-enter {
+    animation: bubbleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  @keyframes bubbleIn {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .narrator-enter {
+    animation: fadeSlide 0.4s ease forwards;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  @keyframes fadeSlide {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .choice-btn {
+    transition: all 0.2s ease;
+    border: 1.5px solid #bfdbfe;
+    background: white;
+    color: #1e40af;
+  }
+  .choice-btn:hover:not(:disabled) {
+    background: #1e40af;
+    color: white;
+    border-color: #1e40af;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30,64,175,0.2);
+  }
+  .choice-btn.selected {
+    background: #1e40af;
+    color: white;
+    border-color: #1e40af;
+  }
+  .choice-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .progress-fill { transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+  .scene-badge {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: white;
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #f0f4f8; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+
+  .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem 1rem; }
+  .rahul-bubble { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 16px 16px 16px 4px; }
+  .priya-bubble { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px 16px 4px 16px; }
+  .system-bubble { background: #fefce8; border: 1px solid #fde68a; border-radius: 12px; }
+  .narrator-text { color: #64748b; font-style: italic; }
+
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+  .avatar-rahul { background: #dbeafe; }
+  .avatar-priya { background: #dcfce7; }
+
+  .completion-card {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 1rem 0;
+    animation: fadeSlide 0.5s ease forwards;
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<div class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+  <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="scene-badge text-xs font-bold px-3 py-1 rounded-full" id="sceneLabel">Scene 1 / 8</div>
+      <span class="text-slate-700 font-semibold text-sm hidden sm:block">Prior Authorization Story</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-xs text-slate-500 font-medium" id="progressText">0% complete</div>
+      <button onclick="restartStory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-3 py-1.5 rounded-lg transition-all">↺ Restart</button>
+    </div>
+  </div>
+  <div class="max-w-3xl mx-auto px-4 pb-2">
+    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+      <div class="progress-fill h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400" id="progressBar" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Character key -->
+<div class="max-w-3xl mx-auto px-4 pt-4 pb-2">
+  <div class="flex gap-3">
+    <div class="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-full px-3 py-1">
+      <span class="text-base">👦</span>
+      <span class="text-xs font-semibold text-blue-700">Rahul — Patient</span>
+    </div>
+    <div class="flex items-center gap-2 bg-green-50 border border-green-100 rounded-full px-3 py-1">
+      <span class="text-base">👧</span>
+      <span class="text-xs font-semibold text-green-700">Priya — Ops Specialist</span>
+    </div>
+  </div>
+</div>
+
+<!-- Chat feed -->
+<div class="max-w-3xl mx-auto px-4 pb-40" id="chatFeed"></div>
+
+<!-- Choice panel (sticky bottom) -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-20" id="choicePanel" style="display:none">
+  <div class="max-w-3xl mx-auto px-4 py-3">
+    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-2" id="choicePrompt">What do you want to know?</p>
+    <div class="flex flex-col sm:flex-row gap-2" id="choiceButtons"></div>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let currentScene = 0;
+let totalScenes = 8;
+let pathChoices = {};
+let appendDelay = 0;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function scrollToBottom() {
+  setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 60);
+}
+
+function updateProgress(scene) {
+  const pct = Math.round((scene / totalScenes) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = pct + '% complete';
+  document.getElementById('sceneLabel').textContent = `Scene ${Math.min(scene + 1, totalScenes)} / ${totalScenes}`;
+}
+
+// ─── Append functions (never innerHTML on chatFeed) ──────────────────────────
+function appendNarrator(text, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const wrap = document.createElement('div');
+      wrap.className = 'narrator-enter flex justify-center my-4';
+      const inner = document.createElement('div');
+      inner.className = 'narrator-text lora text-sm text-center max-w-lg px-4';
+      inner.textContent = text;
+      wrap.appendChild(inner);
+      feed.appendChild(wrap);
+      scrollToBottom();
+      resolve();
+    }, delay);
+  });
+}
+
+function appendSceneHeader(num, title, subtitle, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const wrap = document.createElement('div');
+      wrap.className = 'narrator-enter flex justify-center my-5';
+      const card = document.createElement('div');
+      card.className = 'text-center';
+
+      const badge = document.createElement('div');
+      badge.className = 'inline-flex items-center gap-2 scene-badge text-xs font-bold px-4 py-1.5 rounded-full mb-2';
+      badge.textContent = `Scene ${num}`;
+
+      const h = document.createElement('h2');
+      h.className = 'text-lg font-bold text-slate-800 lora';
+      h.textContent = title;
+
+      const sub = document.createElement('p');
+      sub.className = 'text-xs text-slate-400 mt-1';
+      sub.textContent = subtitle;
+
+      const line = document.createElement('div');
+      line.className = 'w-12 h-0.5 bg-blue-200 mx-auto mt-3';
+
+      card.appendChild(badge);
+      card.appendChild(h);
+      if (subtitle) card.appendChild(sub);
+      card.appendChild(line);
+      wrap.appendChild(card);
+      feed.appendChild(wrap);
+      scrollToBottom();
+      resolve();
+    }, delay);
+  });
+}
+
+function appendRahul(text, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const row = document.createElement('div');
+      row.className = 'chat-bubble-enter flex items-end gap-2 mb-3';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar avatar-rahul';
+      avatar.textContent = '👦';
+
+      const col = document.createElement('div');
+      col.className = 'flex flex-col max-w-xs sm:max-w-md';
+
+      const name = document.createElement('span');
+      name.className = 'text-xs text-blue-500 font-semibold mb-1';
+      name.textContent = 'Rahul';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'rahul-bubble px-4 py-2.5 text-sm text-slate-700 leading-relaxed';
+      bubble.textContent = text;
+
+      col.appendChild(name);
+      col.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(col);
+      feed.appendChild(row);
+      scrollToBottom();
+      resolve();
+    }, delay);
+  });
+}
+
+function appendPriya(text, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const row = document.createElement('div');
+      row.className = 'chat-bubble-enter flex items-end gap-2 mb-3 flex-row-reverse';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar avatar-priya';
+      avatar.textContent = '👧';
+
+      const col = document.createElement('div');
+      col.className = 'flex flex-col items-end max-w-xs sm:max-w-md';
+
+      const name = document.createElement('span');
+      name.className = 'text-xs text-green-600 font-semibold mb-1';
+      name.textContent = 'Priya · Ops Specialist';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'priya-bubble px-4 py-2.5 text-sm text-slate-700 leading-relaxed';
+      bubble.textContent = text;
+
+      col.appendChild(name);
+      col.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(col);
+      feed.appendChild(row);
+      scrollToBottom();
+      resolve();
+    }, delay);
+  });
+}
+
+function appendSystem(label, text, icon, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const wrap = document.createElement('div');
+      wrap.className = 'narrator-enter flex justify-center my-3';
+
+      const card = document.createElement('div');
+      card.className = 'system-bubble px-4 py-3 max-w-md w-full';
+
+      const header = document.createElement('div');
+      header.className = 'flex items-center gap-2 mb-1';
+      const ico = document.createElement('span');
+      ico.textContent = icon;
+      const lbl = document.createElement('span');
+      lbl.className = 'text-xs font-bold text-amber-700 uppercase tracking-wide';
+      lbl.textContent = label;
+      header.appendChild(ico);
+      header.appendChild(lbl);
+
+      const body = document.createElement('p');
+      body.className = 'text-sm text-slate-700';
+      body.textContent = text;
+
+      card.appendChild(header);
+      card.appendChild(body);
+      wrap.appendChild(card);
+      feed.appendChild(wrap);
+      scrollToBottom();
+      resolve();
+    }, delay);
+  });
+}
+
+function appendInfoCard(items, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const wrap = document.createElement('div');
+      wrap.className = 'narrator-enter flex justify-center my-3';
+
+      const card = document.createElement('div');
+      card.className = 'bg-white border border-slate-200 rounded-xl p-4 max-w-md w-full shadow-sm';
+
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'flex items-start gap-3 mb-3 last:mb-0';
+
+        const ico = document.createElement('div');
+        ico.className = 'text-xl flex-shrink-0 mt-0.5';
+        ico.textContent = item.icon;
+
+        const content = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'text-sm font-semibold text-slate-800';
+        title.textContent = item.title;
+        const desc = document.createElement('div');
+        desc.className = 'text-xs text-slate-500 mt-0.5 leading-relaxed';
+        desc.textContent = item.desc;
+
+        content.appendChild(title);
+        content.appendChild(desc);
+        row.appendChild(ico);
+        row.appendChild(content);
+        card.appendChild(row);
+      });
+
+      wrap.appendChild(card);
+      feed.appendChild(wrap);
+      scrollToBottom();
+      resolve();
+    }, delay);
+  });
+}
+
+function appendStat(text, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const wrap = document.createElement('div');
+      wrap.className = 'narrator-enter flex justify-center my-3';
+
+      const card = document.createElement('div');
+      card.className = 'bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 max-w-md w-full flex items-start gap-3';
+
+      const ico = document.createElement('span');
+      ico.className = 'text-xl flex-shrink-0';
+      ico.textContent = '📊';
+
+      const p = document.createElement('p');
+      p.className = 'text-xs text-blue-800 italic leading-relaxed';
+      p.textContent = text;
+
+      card.appendChild(ico);
+      card.appendChild(p);
+      wrap.appendChild(card);
+      feed.appendChild(wrap);
+      scrollToBottom();
+      resolve();
+    }, delay);
+  });
+}
+
+function appendDivider(delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const d = document.createElement('div');
+      d.className = 'border-t border-slate-200 my-6';
+      feed.appendChild(d);
+      resolve();
+    }, delay);
+  });
+}
+
+function appendCompletion(delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const feed = document.getElementById('chatFeed');
+      const wrap = document.createElement('div');
+      wrap.className = 'narrator-enter my-4';
+
+      const card = document.createElement('div');
+      card.className = 'completion-card';
+
+      const title = document.createElement('h3');
+      title.className = 'text-2xl font-bold lora mb-1';
+      title.textContent = '🎉 Story Complete!';
+
+      const sub = document.createElement('p');
+      sub.className = 'text-blue-200 text-sm mb-5';
+      sub.textContent = 'You navigated Rahul\'s entire prior authorization journey.';
+
+      const grid = document.createElement('div');
+      grid.className = 'grid grid-cols-2 gap-3 mb-5';
+
+      const takeaways = [
+        { label: 'Rahul\'s lesson', val: 'Know your rights — PA denials can be appealed', icon: '👦' },
+        { label: 'Priya\'s insight', val: 'Step therapy documentation prevents most denials', icon: '👧' },
+        { label: 'System metric', val: 'Avg denial resolution: 2–5 business days', icon: '📊' },
+        { label: 'Key rule', val: 'Approved PA stays on file — no repeat auth needed', icon: '✅' },
+      ];
+
+      takeaways.forEach(t => {
+        const box = document.createElement('div');
+        box.className = 'bg-white bg-opacity-10 rounded-xl p-3';
+        const ico = document.createElement('div');
+        ico.className = 'text-2xl mb-1';
+        ico.textContent = t.icon;
+        const lbl = document.createElement('div');
+        lbl.className = 'text-blue-200 text-xs font-semibold mb-0.5';
+        lbl.textContent = t.label;
+        const val = document.createElement('div');
+        val.className = 'text-white text-xs leading-snug';
+        val.textContent = t.val;
+        box.appendChild(ico);
+        box.appendChild(lbl);
+        box.appendChild(val);
+        grid.appendChild(box);
+      });
+
+      const restartBtn = document.createElement('button');
+      restartBtn.className = 'w-full bg-white text-blue-800 font-bold text-sm py-2.5 rounded-xl hover:bg-blue-50 transition-all';
+      restartBtn.textContent = '↺ Read the story again';
+      restartBtn.onclick = restartStory;
+
+      card.appendChild(title);
+      card.appendChild(sub);
+      card.appendChild(grid);
+      card.appendChild(restartBtn);
+      wrap.appendChild(card);
+      feed.appendChild(wrap);
+      scrollToBottom();
+      resolve();
+    }, delay);
+  });
+}
+
+// ─── Choice system ────────────────────────────────────────────────────────────
+function showChoices(prompt, choices) {
+  return new Promise(resolve => {
+    const panel = document.getElementById('choicePanel');
+    const btnsDiv = document.getElementById('choiceButtons');
+    const promptEl = document.getElementById('choicePrompt');
+
+    promptEl.textContent = prompt;
+    btnsDiv.innerHTML = '';
+
+    choices.forEach((c, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn flex-1 text-sm font-semibold px-4 py-2.5 rounded-xl text-left sm:text-center';
+      btn.textContent = c.label;
+      btn.onclick = () => {
+        btnsDiv.querySelectorAll('button').forEach(b => b.disabled = true);
+        btn.classList.add('selected');
+        pathChoices[currentScene] = i;
+        panel.style.display = 'none';
+        resolve(c);
+      };
+      btnsDiv.appendChild(btn);
+    });
+
+    panel.style.display = 'block';
+    scrollToBottom();
+  });
+}
+
+// ─── Scene definitions ────────────────────────────────────────────────────────
+async function scene1() {
+  await appendSceneHeader(1, 'The Doctor\'s Office', 'City Medical Center · Monday Morning', 300);
+  await appendNarrator('Rahul has been feeling joint pain and stiffness for months. Today, he finally sees Dr. Patel.', 600);
+  await appendRahul('Dr. Patel, my fingers and wrists have been so stiff every morning. Sometimes I can\'t even hold a cup of tea.', 1000);
+  await appendNarrator('Dr. Patel examines Rahul carefully — checking his joints, ordering blood tests.', 1500);
+  await appendSystem('DIAGNOSIS', 'Rheumatoid Arthritis (RA) — ICD-10: M06.9\nDr. Patel recommends Humira (adalimumab) — a biologic medication.', '🩺', 2000);
+  await appendRahul('Humira? I\'ve heard of it. So… can I just pick it up at the pharmacy?', 2600);
+  await appendPriya('Not quite, Rahul. Humira is a specialty biologic. Most insurance plans — including StarCare Health — require something called a Prior Authorization before they\'ll cover it.', 3200);
+  await appendRahul('Prior Authorization? What does that even mean?', 3900);
+
+  const choice = await showChoices('How do you want Priya to explain this?', [
+    { label: '🧾 Give me the simple version first', key: 'simple' },
+    { label: '⚙️ Walk me through the full process', key: 'full' },
+  ]);
+
+  if (choice.key === 'simple') {
+    await appendPriya('Simply put: your insurance company wants proof from your doctor that Humira is the right treatment — before they agree to pay for it.', 300);
+  } else {
+    await appendPriya('Prior Authorization is a formal approval process. Your doctor submits clinical evidence to your insurance — diagnosis, treatment history, why this specific drug is necessary — and the insurer decides whether to approve coverage.', 300);
+  }
+}
+
+async function scene2() {
+  await appendDivider(300);
+  await appendSceneHeader(2, 'The Insurance Roadblock', 'Dr. Patel\'s Office → StarCare Health', 600);
+  await appendNarrator('Dr. Patel\'s team submits a Prior Authorization request directly to StarCare Health, Rahul\'s insurance payer.', 900);
+
+  await appendInfoCard([
+    { icon: '🏥', title: 'Provider', desc: 'Dr. Patel\'s Office submits PA request with clinical notes' },
+    { icon: '→', title: 'PA Request', desc: 'Sent electronically via fax or portal (or sometimes both, frustratingly)' },
+    { icon: '🏢', title: 'Payer', desc: 'StarCare Health receives and queues the request for clinical review' },
+  ], 1400);
+
+  await appendPriya('Here\'s something important, Rahul. Once StarCare approves a PA, that authorization is saved on file permanently — for that drug, at that dose. You won\'t need to restart this process every month.', 2000);
+  await appendRahul('Oh, that\'s a relief. But how long does this review actually take?', 2700);
+  await appendPriya('Routine PAs: up to 72 hours. Urgent or expedited: 24 hours. Emergencies: real-time. But in practice… it often takes longer.', 3300);
+
+  const choice = await showChoices('What concerns Rahul most?', [
+    { label: '⏰ What happens while I wait for approval?', key: 'wait' },
+    { label: '🤔 Why can\'t the doctor just decide?', key: 'why' },
+  ]);
+
+  if (choice.key === 'wait') {
+    await appendPriya('While waiting, you\'re technically uninsured for Humira. Some doctors provide samples, or there are manufacturer assistance programs. But the system does create a gap — and for RA, that gap matters.', 300);
+  } else {
+    await appendPriya('Doctors do decide — medically. But the insurance company controls payment. They use PA to verify the request meets their coverage criteria. Think of it as a financial gate separate from the clinical gate.', 300);
+  }
+}
+
+async function scene3() {
+  await appendDivider(300);
+  await appendSceneHeader(3, 'What is Prior Authorization?', 'Priya explains the big picture', 600);
+  await appendNarrator('Priya sits down with Rahul for a deeper look at how the system works.', 900);
+
+  await appendPriya('Prior Authorization exists because biologics like Humira are expensive — often $4,000–$6,000 a month. Insurers use PA to confirm it\'s medically necessary and that cheaper alternatives were tried first.', 1300);
+  await appendRahul('So it\'s just about saving money for the insurance company?', 2000);
+  await appendPriya('That\'s the cynical view — and honestly, it\'s not entirely wrong. But step therapy also has legitimate clinical rationale. Starting with less aggressive treatments reduces unnecessary side effects. For a standard case, that makes sense.', 2600);
+  await appendPriya('But for aggressive diagnoses — like severe RA — delays caused by step therapy can allow joint damage to progress. That\'s the real cost the system doesn\'t always account for.', 3300);
+  await appendStat('AMA 2023 PA Survey: Prior Authorization causes treatment delays in the majority of cases — and 1 in 4 patients say they abandoned treatment while waiting for approval.', 4000);
+
+  const choice = await showChoices('What should Rahul understand next?', [
+    { label: '📋 What exactly is step therapy?', key: 'step' },
+    { label: '🌍 Is PA a US-only thing?', key: 'global' },
+  ]);
+
+  if (choice.key === 'step') {
+    await appendPriya('Step therapy means you have to try and fail on a cheaper drug first — like methotrexate — before the insurer will cover Humira. It\'s like saying "prove the bicycle doesn\'t work before we\'ll pay for the car."', 300);
+    await appendPriya('For Rahul\'s case, if Dr. Patel has documented that methotrexate was tried and caused problems, that clears the step therapy requirement. Documentation is everything.', 900);
+  } else {
+    await appendPriya('PA is primarily a US phenomenon — tied to private insurance. Countries with single-payer systems handle this differently. In the US, each insurer has its own criteria, which is why the process can feel inconsistent.', 300);
+  }
+}
+
+async function scene4() {
+  await appendDivider(300);
+  await appendSceneHeader(4, 'What StarCare Health Checks', 'Inside the insurance review process', 600);
+  await appendNarrator('When StarCare Health receives the PA request, a clinical reviewer opens the file and works through a checklist.', 900);
+
+  await appendInfoCard([
+    { icon: '✅', title: 'Eligibility', desc: 'Is Rahul currently covered? Is Humira on his formulary? Tier level determines his copay.' },
+    { icon: '📋', title: 'Clinical Documentation', desc: 'Does the file include diagnosis notes, exam findings, lab results, and treatment history?' },
+    { icon: '🔢', title: 'ICD-10 Diagnosis Match', desc: 'The submitted diagnosis code (M06.9) must match StarCare\'s approved indications for Humira.' },
+    { icon: '📈', title: 'Step Therapy History', desc: 'Has Rahul tried and documented failure on first-line treatments like methotrexate or hydroxychloroquine?' },
+  ], 1400);
+
+  await appendRahul('That\'s a lot of boxes to check. What if one is missing?', 2300);
+  await appendPriya('Then StarCare issues a denial — or a request for additional information. That\'s when things get complicated.', 2900);
+
+  const choice = await showChoices('Which check matters most to understand?', [
+    { label: '🔢 Tell me more about ICD-10 codes', key: 'icd' },
+    { label: '📈 Focus on the step therapy check', key: 'step' },
+  ]);
+
+  if (choice.key === 'icd') {
+    await appendPriya('ICD-10 codes are standardized diagnosis codes used globally. M06.9 means "Rheumatoid Arthritis, unspecified." If Dr. Patel submitted M79.3 (Panniculitis) by mistake, StarCare would deny — not because Humira is wrong, but because the codes don\'t match their approval criteria for that drug.', 300);
+  } else {
+    await appendPriya('Step therapy is the most common denial trigger for biologics. StarCare\'s policy requires documented failure on at least one conventional DMARD like methotrexate before approving Humira. If that documentation isn\'t in the submission, it\'s an automatic denial — even if Rahul did take methotrexate.', 300);
+  }
+}
+
+async function scene5() {
+  await appendDivider(300);
+  await appendSceneHeader(5, 'Denial', 'StarCare Health rejects the request', 600);
+  await appendNarrator('Three days later. Rahul gets a letter. It\'s not what he hoped for.', 900);
+
+  await appendSystem('DENIAL NOTICE — StarCare Health', 'Authorization Request Denied.\nReason: Insufficient step therapy documentation. Required prior treatment with conventional DMARDs not evidenced in submitted records.\nRef: SCA-2024-RA-00741', '❌', 1400);
+
+  await appendRahul('I\'m devastated. Does this mean I can never get Humira covered?', 2000);
+  await appendPriya('Absolutely not. A denial is not a door slamming shut — it\'s a door with a note on it saying "try again with more paperwork."', 2600);
+  await appendPriya('The denial specifically says step therapy documentation is missing. That means Dr. Patel\'s office just needs to pull Rahul\'s methotrexate records and submit them. This is fixable.', 3200);
+  await appendStat('PA denials cost physician offices an average of 2+ staff hours to resolve per case — and that cost is never reimbursed. It\'s one reason many smaller practices struggle with PA volume.', 3900);
+
+  await appendRahul('So the office staff has to spend hours on this? That seems unfair.', 4600);
+  await appendPriya('It is a real burden. And it\'s why healthcare operations roles exist — to navigate exactly this. Let\'s talk about what happens next: the appeal.', 5200);
+
+  const choice = await showChoices('How should Rahul respond to this denial?', [
+    { label: '📞 Call StarCare directly to complain', key: 'call' },
+    { label: '📄 Work with Dr. Patel\'s office to appeal', key: 'appeal' },
+  ]);
+
+  if (choice.key === 'call') {
+    await appendPriya('Calling is fine to understand the denial reason — and you have every right to. But verbal conversations rarely reverse denials. The formal appeal with written documentation is what actually works. Let\'s do both.', 300);
+  } else {
+    await appendPriya('Smart move. The formal appeal process is the fastest path to resolution. Dr. Patel\'s office knows exactly what to gather. Let\'s walk through it.', 300);
+  }
+}
+
+async function scene6() {
+  await appendDivider(300);
+  await appendSceneHeader(6, 'Filing the Appeal', 'Gathering evidence and fighting back', 600);
+  await appendNarrator('Dr. Patel\'s medical coordinator, Neha, takes on Rahul\'s case. She begins pulling documentation.', 900);
+
+  await appendInfoCard([
+    { icon: '📄', title: 'Step 1: Gather documents', desc: 'Methotrexate prescription history, lab results showing inadequate response, any adverse reaction notes.' },
+    { icon: '✍️', title: 'Step 2: Letter of Medical Necessity', desc: 'Dr. Patel writes a formal LMN explaining why Humira specifically is the appropriate next step for Rahul\'s case severity.' },
+    { icon: '📬', title: 'Step 3: Formal appeal submission', desc: 'Appeal filed via StarCare\'s member appeal portal, with all documents attached and a cover letter citing clinical guidelines.' },
+    { icon: '⏱️', title: 'Step 4: Wait for review', desc: 'By law, payers must respond to urgent appeals within 72 hours. Standard: up to 30 days.' },
+  ], 1400);
+
+  await appendPriya('The Letter of Medical Necessity is the most important document here. Dr. Patel explains: Rahul took methotrexate for 6 months, experienced liver enzyme elevation, and showed inadequate disease control. Humira is the next clinical step.', 2300);
+  await appendRahul('Can I do anything to help the appeal?', 3000);
+  await appendPriya('Yes — you can write a patient statement describing how your symptoms affect your daily life. Insurers are still human. A first-person account of struggling to hold a cup of tea can genuinely support a clinical case.', 3600);
+
+  const choice = await showChoices('Should Rahul also request a peer-to-peer review?', [
+    { label: '🩺 Yes — explain what that is', key: 'p2p' },
+    { label: '📋 No — stick to the written appeal', key: 'written' },
+  ]);
+
+  if (choice.key === 'p2p') {
+    await appendPriya('A peer-to-peer (P2P) review is when Dr. Patel calls StarCare\'s medical director directly. It\'s doctor to doctor. Studies show P2P reviews reverse denials roughly 75% of the time. It\'s powerful — but takes the physician\'s time.', 300);
+    await appendPriya('Dr. Patel agrees to request a P2P. The call is scheduled for the following morning.', 900);
+  } else {
+    await appendPriya('The written appeal with strong documentation is often enough, especially when step therapy documentation is clear. Let\'s see how StarCare responds.', 300);
+  }
+}
+
+async function scene7() {
+  await appendDivider(300);
+  await appendSceneHeader(7, 'Approved', 'StarCare grants authorization', 600);
+  await appendNarrator('Five days after the appeal. Rahul\'s phone rings.', 900);
+
+  await appendRahul('Hello?', 1200);
+  await appendNarrator('It\'s Neha from Dr. Patel\'s office, and she\'s smiling.', 1700);
+  await appendPriya('Rahul — great news. StarCare has approved your prior authorization for Humira. The appeal worked.', 2200);
+
+  await appendSystem('AUTHORIZATION APPROVED — StarCare Health', 'Drug: Adalimumab (Humira) 40mg/0.8mL\nAuth Number: SCA-2024-AUTH-18844\nValid: 12 months · Renewable\nNote: This authorization is saved on file. No repeat PA required for ongoing treatment at this dose.', '✅', 2900);
+
+  await appendRahul('That authorization number — what do I do with it?', 3600);
+  await appendPriya('The specialty pharmacy will ask for it when you fill your first prescription. After that, they keep it on file. You just pick up your medication normally going forward.', 4200);
+  await appendPriya('And here\'s the key thing: because this PA is now approved and on file, you\'re protected. Even if your plan renews next year, this authorization carries forward unless your clinical situation changes.', 4900);
+  await appendRahul('So all that stress… and the answer was always to appeal with the right documents.', 5600);
+  await appendPriya('Exactly. The system is designed to be navigable — but it requires knowing the rules. That\'s why people like me exist.', 6200);
+
+  const choice = await showChoices('What does Rahul want to know last?', [
+    { label: '💊 When can I start taking Humira?', key: 'start' },
+    { label: '🔁 What if StarCare denies the renewal next year?', key: 'renewal' },
+  ]);
+
+  if (choice.key === 'start') {
+    await appendPriya('The specialty pharmacy will contact you within 24–48 hours once they verify the auth. Most patients start their first dose within a week. Dr. Patel\'s nurse will walk you through self-injection technique.', 300);
+  } else {
+    await appendPriya('Renewals are usually easier — because your documented treatment history now exists. If you\'re responding well to Humira, the renewal PA is nearly automatic. The hard part was the first approval.', 300);
+  }
+}
+
+async function scene8() {
+  await appendDivider(300);
+  await appendSceneHeader(8, 'Takeaways', 'Two perspectives on the same journey', 600);
+  await appendNarrator('Rahul\'s story ends with an approval. But the healthcare system keeps running — tracking patterns, measuring outcomes, looking for what can be improved.', 900);
+
+  await appendRahul('I learned that "denied" doesn\'t mean "never." It means "not yet — give us more evidence." And that evidence exists. I just didn\'t know to ask for it.', 1400);
+  await appendPriya('From an operations standpoint, Rahul\'s case revealed a documentation gap. The step therapy records existed — they just weren\'t included in the initial submission. One checklist would have prevented the denial entirely.', 2200);
+
+  await appendInfoCard([
+    { icon: '📉', title: 'Denial rate', desc: 'StarCare denied ~15% of biologic PAs in 2023. Most were reversed on appeal — suggesting the initial criteria are too broad.' },
+    { icon: '📤', title: 'Appeal rate', desc: '~40% of denied PAs are appealed. Of those, ~75% are overturned — raising the question: why deny in the first place?' },
+    { icon: '⏱️', title: 'Resolution time', desc: 'Average time from denial to final approval: 8–14 days. For aggressive conditions, this delay is clinically meaningful.' },
+  ], 3000);
+
+  await appendStat('"Prior authorization requirements continue to contribute to care delays and patient harm. Modernizing PA with electronic processing and evidence-based criteria is a health equity issue." — American Medical Association, 2023', 3800);
+
+  await appendPriya('The system isn\'t broken — it\'s just slow. And knowing how it works is the first step to making it work for you.', 4500);
+  await appendRahul('Thank you, Priya. I feel like I actually understand what happened — and what to do if it happens again.', 5200);
+
+  await appendCompletion(5900);
+}
+
+// ─── Scene runner ─────────────────────────────────────────────────────────────
+const scenes = [scene1, scene2, scene3, scene4, scene5, scene6, scene7, scene8];
+
+async function runScene(index) {
+  currentScene = index;
+  updateProgress(index);
+  await scenes[index]();
+
+  if (index < scenes.length - 1) {
+    const feed = document.getElementById('chatFeed');
+    const nextWrap = document.createElement('div');
+    nextWrap.className = 'narrator-enter flex justify-center my-6';
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-full transition-all shadow-md hover:shadow-lg';
+    nextBtn.textContent = `Continue to Scene ${index + 2} →`;
+    nextBtn.onclick = async () => {
+      nextBtn.disabled = true;
+      nextBtn.textContent = 'Loading...';
+      nextWrap.remove();
+      await runScene(index + 1);
+    };
+    setTimeout(() => {
+      nextWrap.appendChild(nextBtn);
+      feed.appendChild(nextWrap);
+      scrollToBottom();
+    }, 500);
+  } else {
+    updateProgress(8);
+  }
+}
+
+function restartStory() {
+  pathChoices = {};
+  currentScene = 0;
+  appendDelay = 0;
+  document.getElementById('chatFeed').innerHTML = '';
+  document.getElementById('choicePanel').style.display = 'none';
+  updateProgress(0);
+  runScene(0);
+}
+
+// Start
+runScene(0);
+</script>
+</body>
+</html>
