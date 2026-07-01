@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Supply Chain Control Tower</title>
+<style>
+  /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
+  :root{
+    --bg:            #0a0e17;
+    --bg-elev:       #0d1420;
+    --panel:         #121b29;
+    --panel-2:       #17212f;
+    --border:        #22314a;
+    --border-soft:   #1a2536;
+
+    --cyan:          #22d3ee;
+    --cyan-dim:      #0e7490;
+    --blue:          #3b82f6;
+    --red:           #ef4444;
+    --orange:        #f59e0b;
+    --green:         #22c55e;
+
+    --text:          #e6edf5;
+    --text-dim:      #a9b7c9;
+    --muted:         #64758a;
+
+    --font-body:     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-data:     ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
+
+    --radius:        10px;
+    --radius-sm:     6px;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(59,130,246,0.10), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(34,211,238,0.08), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    min-height:100%;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:rgba(34,211,238,0.25); }
+  button{ font-family:inherit; cursor:pointer; }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:var(--bg-elev); }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+
+  /* focus visibility */
+  button:focus-visible, .action-btn:focus-visible{
+    outline:2px solid var(--cyan); outline-offset:2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001s !important; transition-duration:0.001s !important; }
+  }
+
+  /* ============================================================
+     LAYOUT SHELL
+     ============================================================ */
+  #app{ max-width:1440px; margin:0 auto; padding:18px 22px 40px; }
+
+  header.topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; padding-bottom:16px; flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:40px; height:40px; border-radius:10px;
+    background:linear-gradient(135deg, var(--cyan), var(--blue));
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-data); font-weight:700; font-size:16px; color:#00151c;
+    box-shadow:0 0 24px rgba(34,211,238,0.35);
+  }
+  .brand-text h1{ font-size:18px; letter-spacing:0.02em; font-weight:700; }
+  .brand-text p{ font-size:11.5px; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
+
+  .topbar-controls{ display:flex; align-items:center; gap:10px; }
+
+  .icon-btn{
+    width:38px; height:38px; border-radius:9px;
+    background:var(--panel); border:1px solid var(--border);
+    color:var(--text-dim); display:flex; align-items:center; justify-content:center;
+    font-size:16px; transition:all .15s ease;
+  }
+  .icon-btn:hover{ border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 12px rgba(34,211,238,0.18); }
+  .icon-btn.active{ color:var(--cyan); border-color:var(--cyan-dim); background:rgba(34,211,238,0.08); }
+
+  /* circular countdown ring */
+  .ring-wrap{ position:relative; width:64px; height:64px; }
+  .ring-wrap svg{ transform:rotate(-90deg); }
+  .ring-bg{ fill:none; stroke:var(--border-soft); stroke-width:5; }
+  .ring-fg{ fill:none; stroke:var(--cyan); stroke-width:5; stroke-linecap:round;
+    transition:stroke-dashoffset 0.2s linear, stroke 0.3s ease; filter:drop-shadow(0 0 6px rgba(34,211,238,0.6)); }
+  .ring-label{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-data); font-size:13px; font-weight:600;
+  }
+
+  /* ============================================================
+     LIVE OPS PULSE — signature ticker
+     ============================================================ */
+  .pulse-strip{
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(90deg, rgba(34,211,238,0.06), rgba(59,130,246,0.04));
+    border:1px solid var(--border-soft); border-radius:999px;
+    padding:8px 16px; margin-bottom:18px; overflow:hidden;
+  }
+  .pulse-dot{
+    width:8px; height:8px; border-radius:50%; background:var(--green); flex:none;
+    box-shadow:0 0 8px var(--green);
+    animation:pulseDot 1.6s ease-in-out infinite;
+  }
+  @keyframes pulseDot{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.4; transform:scale(0.8);} }
+  .pulse-track{ overflow:hidden; white-space:nowrap; flex:1; mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+  .pulse-inner{ display:inline-block; font-family:var(--font-data); font-size:12px; color:var(--text-dim); letter-spacing:0.02em;
+    animation:scrollPulse 26s linear infinite; }
+  @keyframes scrollPulse{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+
+  /* ============================================================
+     KPI BAR
+     ============================================================ */
+  .kpi-bar{
+    display:grid; grid-template-columns:repeat(8, 1fr); gap:10px; margin-bottom:20px;
+  }
+  .kpi-card{
+    background:linear-gradient(180deg, var(--panel), var(--panel-2));
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:12px 14px; position:relative; overflow:hidden;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .kpi-card::before{
+    content:""; position:absolute; inset:0; opacity:0; transition:opacity .3s ease;
+    background:radial-gradient(120px 60px at 20% 0%, rgba(34,211,238,0.18), transparent 70%);
+  }
+  .kpi-card.flash::before{ opacity:1; }
+  .kpi-card.flash-bad{ box-shadow:inset 0 0 0 1px rgba(239,68,68,0.5); }
+  .kpi-card.flash-good{ box-shadow:inset 0 0 0 1px rgba(34,197,94,0.5); }
+  .kpi-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.07em; color:var(--muted); margin-bottom:6px; }
+  .kpi-value{ font-family:var(--font-data); font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .kpi-value small{ font-size:12px; color:var(--muted); font-weight:500; }
+  .kpi-bar-track{ height:3px; background:var(--border-soft); border-radius:3px; margin-top:8px; overflow:hidden; }
+  .kpi-bar-fill{ height:100%; border-radius:3px; transition:width .4s ease, background .4s ease; }
+
+  @media (max-width:1180px){ .kpi-bar{ grid-template-columns:repeat(4,1fr); } }
+  @media (max-width:620px){ .kpi-bar{ grid-template-columns:repeat(2,1fr); } }
+
+  /* ============================================================
+     MAIN GRID
+     ============================================================ */
+  .main-grid{ display:grid; grid-template-columns:1fr 340px; gap:18px; align-items:start; }
+  @media (max-width:980px){ .main-grid{ grid-template-columns:1fr; } }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  }
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px; border-bottom:1px solid var(--border-soft);
+  }
+  .panel-head h2{ font-size:13px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim); }
+  .panel-head .count{ font-family:var(--font-data); font-size:12px; color:var(--muted); }
+
+  /* ---------- Alert feed ---------- */
+  #alertFeed{ padding:14px; display:flex; flex-direction:column; gap:12px; min-height:360px; }
+  .empty-state{ text-align:center; color:var(--muted); font-size:13px; padding:60px 20px; }
+
+  .alert-card{
+    background:var(--panel-2); border:1px solid var(--border); border-left:4px solid var(--muted);
+    border-radius:var(--radius-sm); padding:14px 16px; position:relative;
+    animation:cardIn .35s ease;
+  }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(-6px);} to{ opacity:1; transform:translateY(0);} }
+  .alert-card.p-critical{ border-left-color:var(--red); box-shadow:0 0 0 1px rgba(239,68,68,0.15), 0 0 22px rgba(239,68,68,0.08); }
+  .alert-card.p-high{ border-left-color:var(--orange); box-shadow:0 0 0 1px rgba(245,158,11,0.12); }
+  .alert-card.p-medium{ border-left-color:var(--blue); }
+
+  .alert-card.resolving{ animation:cardOut .35s ease forwards; }
+  @keyframes cardOut{ to{ opacity:0; transform:translateX(12px) scale(0.98); max-height:0; padding-top:0; padding-bottom:0; margin:0; } }
+
+  .alert-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .alert-title-row{ display:flex; align-items:center; gap:8px; }
+  .alert-icon{ font-size:17px; }
+  .alert-title{ font-size:14.5px; font-weight:700; }
+  .crit-pulse{ width:7px; height:7px; border-radius:50%; background:var(--red); box-shadow:0 0 6px var(--red);
+    animation:pulseDot 1s ease-in-out infinite; flex:none; }
+
+  .priority-chip{
+    font-family:var(--font-data); font-size:10px; letter-spacing:0.06em; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; flex:none; font-weight:600;
+  }
+  .p-critical .priority-chip{ background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); }
+  .p-high .priority-chip{ background:rgba(245,158,11,0.15); color:#fcd34d; border:1px solid rgba(245,158,11,0.35); }
+  .p-medium .priority-chip{ background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.35); }
+
+  .alert-desc{ font-size:12.5px; color:var(--text-dim); margin:8px 0 6px; line-height:1.5; }
+  .alert-impact{ font-family:var(--font-data); font-size:11.5px; color:var(--muted); margin-bottom:10px; }
+  .alert-impact b{ color:var(--text-dim); }
+
+  .timeleft-track{ height:4px; background:var(--border-soft); border-radius:3px; overflow:hidden; margin-bottom:12px; }
+  .timeleft-fill{ height:100%; background:var(--cyan); transition:width .1s linear; }
+
+  .action-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .action-btn{
+    background:var(--bg-elev); border:1px solid var(--border); color:var(--text);
+    padding:7px 12px; border-radius:7px; font-size:12px; font-weight:600;
+    transition:all .15s ease;
+  }
+  .action-btn:hover{ border-color:var(--cyan); color:var(--cyan); background:rgba(34,211,238,0.08); transform:translateY(-1px); }
+  .action-btn.secondary{ color:var(--muted); border-style:dashed; }
+  .action-btn.secondary:hover{ color:var(--text-dim); border-color:var(--muted); background:transparent; }
+
+  /* ---------- Sidebar: log + summary ---------- */
+  .sidebar{ display:flex; flex-direction:column; gap:18px; }
+  #eventLog{ list-style:none; padding:12px 14px; display:flex; flex-direction:column; gap:8px; max-height:520px; overflow-y:auto; }
+  #eventLog li{
+    font-size:12px; line-height:1.4; padding:8px 10px; border-radius:7px; background:var(--bg-elev);
+    border-left:3px solid var(--border); color:var(--text-dim); animation:cardIn .3s ease;
+  }
+  #eventLog li .t{ font-family:var(--font-data); color:var(--muted); font-size:10.5px; margin-right:6px; }
+  #eventLog li.good{ border-left-color:var(--green); }
+  #eventLog li.bad{ border-left-color:var(--red); }
+  #eventLog li.neutral{ border-left-color:var(--orange); }
+
+  .score-card{ padding:16px; text-align:center; }
+  .score-card .label{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+  .score-card .value{ font-family:var(--font-data); font-size:34px; font-weight:700; color:var(--cyan);
+    text-shadow:0 0 20px rgba(34,211,238,0.35); margin-top:4px; }
+
+  /* ============================================================
+     OVERLAYS (start / help / pause / end)
+     ============================================================ */
+  .overlay{
+    position:fixed; inset:0; background:rgba(6,9,15,0.82); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .overlay.hidden{ display:none; }
+  .modal{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    width:100%; max-width:520px; padding:28px; box-shadow:0 30px 80px rgba(0,0,0,0.5);
+  }
+  .modal h2{ font-size:20px; margin-bottom:6px; }
+  .modal p.sub{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+  .modal ul{ margin:0 0 18px 18px; color:var(--text-dim); font-size:13px; line-height:1.7; }
+  .modal .btn-row{ display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+
+  .btn{
+    padding:11px 20px; border-radius:9px; border:1px solid var(--border); font-weight:700; font-size:13.5px;
+    background:var(--panel-2); color:var(--text); transition:all .15s ease;
+  }
+  .btn.primary{ background:linear-gradient(135deg, var(--cyan), var(--blue)); color:#001018; border:none;
+    box-shadow:0 6px 20px rgba(34,211,238,0.25); }
+  .btn.primary:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+  .btn:not(.primary):hover{ border-color:var(--cyan); color:var(--cyan); }
+
+  .grade-badge{
+    width:88px; height:88px; border-radius:50%; margin:8px auto 14px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-data); font-size:32px; font-weight:800;
+    background:radial-gradient(circle at 30% 25%, rgba(255,255,255,0.15), transparent 60%), var(--panel-2);
+    border:2px solid var(--cyan); color:var(--cyan); box-shadow:0 0 30px rgba(34,211,238,0.35);
+  }
+  .end-stats{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:16px 0; }
+  .end-stats div{ background:var(--bg-elev); border:1px solid var(--border-soft); border-radius:8px; padding:10px 12px; }
+  .end-stats div .l{ font-size:10px; text-transform:uppercase; color:var(--muted); letter-spacing:0.06em; }
+  .end-stats div .v{ font-family:var(--font-data); font-size:16px; font-weight:700; margin-top:2px; }
+  #endSummary{ font-size:13px; color:var(--text-dim); line-height:1.6; margin-top:6px; }
+
+  .paused-flag{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%);
+    background:var(--orange); color:#241300; font-weight:700; font-size:12px;
+    padding:6px 14px; border-radius:999px; letter-spacing:0.06em; z-index:60;
+    box-shadow:0 8px 20px rgba(245,158,11,0.35);
+  }
+  .paused-flag.hidden{ display:none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">CT</div>
+      <div class="brand-text">
+        <h1>AI Supply Chain Control Tower</h1>
+        <p>Global Operations · Live Session</p>
+      </div>
+    </div>
+    <div class="topbar-controls">
+      <div class="ring-wrap" title="Time remaining">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="ring-bg" cx="32" cy="32" r="27"></circle>
+          <circle id="ringFg" class="ring-fg" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="ring-label" id="ringLabel">3:00</div>
+      </div>
+      <button class="icon-btn" id="soundBtn" title="Toggle sound (visual only)">🔊</button>
+      <button class="icon-btn" id="pauseBtn" title="Pause">⏸</button>
+      <button class="icon-btn" id="helpBtn" title="Help">?</button>
+    </div>
+  </header>
+
+  <div class="pulse-strip">
+    <span class="pulse-dot"></span>
+    <div class="pulse-track">
+      <div class="pulse-inner" id="pulseTicker">LOADING GLOBAL FEED…&nbsp;&nbsp;&nbsp;&nbsp;LOADING GLOBAL FEED…&nbsp;&nbsp;&nbsp;&nbsp;</div>
+    </div>
+  </div>
+
+  <section class="kpi-bar" id="kpiBar">
+    <!-- KPI cards injected by JS -->
+  </section>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Active Alerts</h2>
+        <span class="count" id="alertCount">0 open</span>
+      </div>
+      <div id="alertFeed">
+        <div class="empty-state" id="emptyState">Control tower is quiet. Press <b>Start Shift</b> to begin monitoring the network.</div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="panel score-card">
+        <div class="label">Operations Score</div>
+        <div class="value" id="scoreDisplay">0</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Event Log</h2>
+          <span class="count" id="logCount">0 events</span>
+        </div>
+        <ul id="eventLog"></ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="paused-flag hidden" id="pausedFlag">⏸ SHIFT PAUSED</div>
+
+<!-- START MODAL -->
+<div class="overlay" id="startOverlay">
+  <div class="modal">
+    <h2>Welcome, Head of Operations.</h2>
+    <p class="sub">Your network is live. Alerts will start arriving the moment you begin your shift.</p>
+    <ul>
+      <li>Alerts appear on the left — each has a priority, a countdown, and a business impact.</li>
+      <li>Choose an action before the timer runs out. The right call protects revenue and KPIs.</li>
+      <li>Ignoring or delaying issues carries risk — some consequences arrive later.</li>
+      <li>Your shift lasts <b>3 minutes</b>. Alert volume increases as time goes on.</li>
+    </ul>
+    <div class="btn-row">
+      <button class="btn primary" id="startBtn">Start Shift</button>
+      <button class="btn" id="startHelpBtn">How to play</button>
+    </div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="overlay hidden" id="helpOverlay">
+  <div class="modal">
+    <h2>How the Control Tower works</h2>
+    <p class="sub">A quick brief before you take the seat.</p>
+    <ul>
+      <li><b>KPIs</b> at the top track Service Level, Customer Satisfaction, Inventory Health, Transportation Efficiency, Operating Cost, and Revenue Protected.</li>
+      <li><b>Every alert</b> offers a few relevant actions — pick the one that best fits the situation. Some actions are the strongest fix, others are partial or costly workarounds.</li>
+      <li><b>Ignore</b> and <b>Delay Decision</b> are always available, but they usually cost you — delayed decisions resolve on their own after a few seconds, for better or worse.</li>
+      <li>Unresolved alerts that hit zero on their countdown are treated as missed and hurt your KPIs.</li>
+      <li>At the end of the shift you'll get a performance grade from A+ to D, based on your score and KPI health.</li>
+    </ul>
+    <div class="btn-row">
+      <button class="btn primary" id="closeHelpBtn">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- END MODAL -->
+<div class="overlay hidden" id="endOverlay">
+  <div class="modal">
+    <div style="text-align:center;">
+      <div class="label" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">Shift Complete</div>
+      <div class="grade-badge" id="gradeBadge">A</div>
+      <div style="font-family:var(--font-data);font-size:26px;font-weight:700;" id="finalScore">0</div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;">Final Score</div>
+    </div>
+    <div class="end-stats" id="endStats"></div>
+    <p id="endSummary"></p>
+    <div class="btn-row">
+      <button class="btn primary" id="playAgainBtn">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     GAME CONSTANTS & DATA
+     ============================================================ */
+  const SHIFT_SECONDS = 180;               // 3 minute shift
+  const TICK_MS = 100;                     // engine tick
+
+  const KPI_DEFS = [
+    { key:'service',   label:'Service Level',        unit:'%', start:95, min:0, max:100 },
+    { key:'csat',       label:'Cust. Satisfaction',   unit:'%', start:90, min:0, max:100 },
+    { key:'inventory',  label:'Inventory Health',     unit:'%', start:85, min:0, max:100 },
+    { key:'transport',  label:'Transport Efficiency', unit:'%', start:88, min:0, max:100 },
+    { key:'cost',       label:'Operating Cost',       unit:'idx', start:50, min:0, max:100, lowerBetter:true },
+    { key:'revenue',    label:'Revenue Protected',    unit:'$', start:0, min:0, max:999999, isCurrency:true },
+    { key:'score',      label:'Score',                unit:'', start:0, min:-999999, max:999999 },
+    { key:'time',       label:'Time Remaining',       unit:'s', start:SHIFT_SECONDS, min:0, max:SHIFT_SECONDS }
+  ];
+
+  // Action pool — generic labels reused contextually across alert types
+  const ACTIONS = {
+    expedite:   { label:'Expedite Shipment' },
+    backup:     { label:'Use Backup Supplier' },
+    reroute:    { label:'Reroute Trucks' },
+    produce:    { label:'Increase Production' },
+    transfer:   { label:'Transfer Inventory' },
+    airfreight: { label:'Approve Air Freight' },
+    ignore:     { label:'Ignore', secondary:true },
+    delay:      { label:'Delay Decision', secondary:true }
+  };
+
+  // Each alert type: relevant contextual actions with a quality tier.
+  // tiers: best > good > poor  (ignore/delay are handled separately as universal 'bad' options)
+  const ALERT_TYPES = [
+    { type:'Port Congestion', icon:'🚨', priority:'high',
+      desc:['A key gateway port is backed up, delaying inbound containers.','Berth delays are stacking up at the origin port.'],
+      actions:[ {a:'reroute', tier:'best'}, {a:'airfreight', tier:'good'}, {a:'backup', tier:'poor'} ] },
+
+    { type:'Supplier Delay', icon:'🚨', priority:'medium',
+      desc:['A tier-1 supplier reports a 3-day production slip.','Raw material delivery from a key supplier has slipped.'],
+      actions:[ {a:'backup', tier:'best'}, {a:'expedite', tier:'good'}, {a:'produce', tier:'poor'} ] },
+
+    { type:'Truck Breakdown', icon:'🚨', priority:'medium',
+      desc:['A line-haul truck broke down mid-route with a full load.','Mechanical failure has stranded a loaded trailer.'],
+      actions:[ {a:'reroute', tier:'best'}, {a:'expedite', tier:'good'}, {a:'backup', tier:'poor'} ] },
+
+    { type:'Warehouse Running Out of Stock', icon:'🚨', priority:'high',
+      desc:['A regional DC is projected to stock out within 24 hours.','Fast-moving SKUs are nearing zero at a regional warehouse.'],
+      actions:[ {a:'transfer', tier:'best'}, {a:'airfreight', tier:'good'}, {a:'produce', tier:'poor'} ] },
+
+    { type:'Customs Inspection', icon:'🚨', priority:'medium',
+      desc:['A shipment has been flagged for a random customs inspection.','Border clearance is held up pending documentation review.'],
+      actions:[ {a:'expedite', tier:'best'}, {a:'airfreight', tier:'good'}, {a:'backup', tier:'poor'} ] },
+
+    { type:'Demand Spike', icon:'🚨', priority:'high',
+      desc:['Unexpected demand surge detected for a top SKU.','Sell-through is running well above forecast this week.'],
+      actions:[ {a:'produce', tier:'best'}, {a:'transfer', tier:'good'}, {a:'airfreight', tier:'poor'} ] },
+
+    { type:'Factory Machine Failure', icon:'🚨', priority:'critical',
+      desc:['A critical production line has gone down unexpectedly.','A machine failure has halted output at the primary plant.'],
+      actions:[ {a:'backup', tier:'best'}, {a:'transfer', tier:'good'}, {a:'produce', tier:'poor'} ] },
+
+    { type:'Weather Disruption', icon:'🚨', priority:'high',
+      desc:['Severe weather is closing major freight corridors.','A storm system is disrupting regional transport lanes.'],
+      actions:[ {a:'reroute', tier:'best'}, {a:'airfreight', tier:'good'}, {a:'expedite', tier:'poor'} ] },
+
+    { type:'Wrong Inventory Count', icon:'🚨', priority:'low',
+      desc:['A cycle count mismatch was flagged at a distribution center.','System-reported stock does not match a physical count.'],
+      actions:[ {a:'transfer', tier:'best'}, {a:'backup', tier:'poor'} ] },
+
+    { type:'Damaged Shipment', icon:'🚨', priority:'high',
+      desc:['A container arrived with visible damage to the goods.','Inbound cargo was damaged in transit and flagged at receiving.'],
+      actions:[ {a:'expedite', tier:'best'}, {a:'backup', tier:'good'}, {a:'transfer', tier:'poor'} ] }
+  ];
+
+  const PRIORITY_WEIGHT = { critical:4, high:3, medium:2, low:1 };
+  const PRIORITY_LIFESPAN = { critical:[10,15], high:[14,20], medium:[18,26], low:[22,30] };
+  const PRIORITY_IMPACT   = { critical:[22000,42000], high:[12000,26000], medium:[6000,15000], low:[2000,7000] };
+
+  const TIER_EFFECT = {
+    best:{ score:120, kpi:2,  cost:3,  revenueMult:1.0,  label:'good' },
+    good:{ score:70,  kpi:1,  cost:5,  revenueMult:0.6,  label:'good' },
+    poor:{ score:20,  kpi:-1, cost:8,  revenueMult:0.2,  label:'neutral' },
+    bad: { score:-50, kpi:-3, cost:10, revenueMult:0,    label:'bad' }
+  };
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+  let kpi = {};
+  let activeAlerts = [];      // {id, def, priority, remaining, lifespan, node, resolved}
+  let alertSeq = 0;
+  let elapsed = 0;
+  let spawnAccumulator = 0;
+  let paused = false;
+  let running = false;
+  let soundOn = true;
+  let tickHandle = null;
+  let stats = { resolved:0, correct:0, wrong:0 };
+
+  const els = {};
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+  function cacheEls(){
+    ['kpiBar','alertFeed','emptyState','alertCount','eventLog','logCount','scoreDisplay',
+     'ringFg','ringLabel','pulseTicker','pausedFlag','startOverlay','helpOverlay','endOverlay',
+     'gradeBadge','finalScore','endStats','endSummary'].forEach(id => els[id] = document.getElementById(id));
+  }
+
+  function resetState(){
+    kpi = {};
+    KPI_DEFS.forEach(d => kpi[d.key] = d.start);
+    activeAlerts = [];
+    alertSeq = 0;
+    elapsed = 0;
+    spawnAccumulator = 0;
+    paused = false;
+    stats = { resolved:0, correct:0, wrong:0 };
+    els.alertFeed.innerHTML = '';
+    els.emptyState = document.createElement('div');
+    els.emptyState.className = 'empty-state';
+    els.emptyState.id = 'emptyState';
+    els.emptyState.textContent = 'Control tower is quiet. New alerts will appear here.';
+    els.alertFeed.appendChild(els.emptyState);
+    els.eventLog.innerHTML = '';
+    renderKpiBar();
+    updateAllKpiDisplays();
+    updateAlertCount();
+    updateLogCount();
+    updateRing();
+  }
+
+  function renderKpiBar(){
+    els.kpiBar.innerHTML = '';
+    KPI_DEFS.forEach(def => {
+      if(def.key === 'time') return; // time shown in ring, not a card
+      const card = document.createElement('div');
+      card.className = 'kpi-card';
+      card.id = 'kpi-card-' + def.key;
+      card.innerHTML = `
+        <div class="kpi-label">${def.label}</div>
+        <div class="kpi-value" id="kpi-val-${def.key}">--</div>
+        <div class="kpi-bar-track"><div class="kpi-bar-fill" id="kpi-fill-${def.key}"></div></div>
+      `;
+      els.kpiBar.appendChild(card);
+    });
+  }
+
+  function formatKpiValue(def){
+    const v = kpi[def.key];
+    if(def.isCurrency) return '$' + Math.max(0, Math.round(v)).toLocaleString();
+    if(def.key === 'score') return Math.round(v).toLocaleString();
+    return Math.round(clamp(v, def.min, def.max)) + (def.unit === '%' ? '<small>%</small>' : (def.unit ? '<small> '+def.unit+'</small>' : ''));
+  }
+
+  function updateAllKpiDisplays(){
+    KPI_DEFS.forEach(def => {
+      if(def.key === 'time') return;
+      const valEl = document.getElementById('kpi-val-' + def.key);
+      const fillEl = document.getElementById('kpi-fill-' + def.key);
+      if(!valEl) return;
+      valEl.innerHTML = formatKpiValue(def);
+      if(fillEl){
+        let pct;
+        if(def.isCurrency){ pct = Math.min(100, (kpi[def.key] / 300000) * 100); }
+        else if(def.key === 'score'){ pct = Math.min(100, Math.max(0, (kpi[def.key] / 3000) * 100)); }
+        else { pct = clamp(kpi[def.key], def.min, def.max); }
+        fillEl.style.width = pct + '%';
+        let color = 'var(--cyan)';
+        if(!def.isCurrency && def.key !== 'score'){
+          const good = def.lowerBetter ? (100 - pct) : pct;
+          color = good >= 70 ? 'var(--green)' : good >= 40 ? 'var(--orange)' : 'var(--red)';
+        }
+        fillEl.style.background = color;
+      }
+    });
+    els.scoreDisplay.textContent = Math.round(kpi.score).toLocaleString();
+  }
+
+  function flashKpi(key, good){
+    const card = document.getElementById('kpi-card-' + key);
+    if(!card) return;
+    card.classList.add('flash', good ? 'flash-good' : 'flash-bad');
+    setTimeout(() => card.classList.remove('flash','flash-good','flash-bad'), 500);
+  }
+
+  /* ============================================================
+     UTIL
+     ============================================================ */
+  function clamp(v,min,max){ return Math.min(max, Math.max(min, v)); }
+  function rand(min,max){ return Math.random() * (max-min) + min; }
+  function randInt(min,max){ return Math.floor(rand(min,max+1)); }
+  function pick(arr){ return arr[randInt(0, arr.length-1)]; }
+  function fmtTime(s){
+    s = Math.max(0, Math.ceil(s));
+    const m = Math.floor(s/60), sec = s%60;
+    return m + ':' + String(sec).padStart(2,'0');
+  }
+
+  /* ============================================================
+     TICKER (signature pulse strip)
+     ============================================================ */
+  function buildTicker(){
+    const lines = [
+      'GLOBAL NETWORK: 14 REGIONS ONLINE',
+      'WEATHER: MONITORING 2 ACTIVE SYSTEMS',
+      'FLEET STATUS: NOMINAL',
+      'WAREHOUSE SYNC: OK',
+      'CUSTOMS FEED: CONNECTED',
+      'AI RISK ENGINE: SCANNING…'
+    ];
+    const text = lines.join('  ·  ') + '  ·  ';
+    els.pulseTicker.textContent = text + text;
+  }
+
+  /* ============================================================
+     ALERT ENGINE
+     ============================================================ */
+  function spawnIntervalFor(fraction){
+    // 6.0s at start -> 2.0s near the end
+    return lerp(6.0, 2.0, fraction);
+  }
+  function maxConcurrentFor(fraction){
+    return Math.round(lerp(2, 6, fraction));
+  }
+  function lerp(a,b,t){ return a + (b-a)*clamp(t,0,1); }
+
+  function spawnAlert(){
+    const def = pick(ALERT_TYPES);
+    const priority = def.priority === 'low' ? 'medium' : def.priority; // keep only 3 visual tiers, low maps to medium visuals but weaker impact
+    const lifespanRange = PRIORITY_LIFESPAN[def.priority] || PRIORITY_LIFESPAN.medium;
+    const impactRange = PRIORITY_IMPACT[def.priority] || PRIORITY_IMPACT.medium;
+    const lifespan = rand(lifespanRange[0], lifespanRange[1]);
+    const impactValue = randInt(impactRange[0], impactRange[1]);
+
+    const alert = {
+      id: 'a' + (++alertSeq),
+      def,
+      priorityRaw: def.priority,
+      priorityClass: def.priority === 'critical' ? 'p-critical' : (def.priority === 'high' ? 'p-high' : 'p-medium'),
+      desc: pick(def.desc),
+      lifespan,
+      remaining: lifespan,
+      impactValue,
+      resolved: false,
+      delayTimer: null
+    };
+    activeAlerts.push(alert);
+    renderAlertCard(alert);
+    updateAlertCount();
+  }
+
+  function renderAlertCard(alert){
+    els.emptyState && els.emptyState.remove();
+    const card = document.createElement('div');
+    card.className = 'alert-card ' + alert.priorityClass;
+    card.id = 'card-' + alert.id;
+
+    const actionsHtml = alert.def.actions.map(entry => {
+      const a = ACTIONS[entry.a];
+      return `<button class="action-btn" data-alert="${alert.id}" data-action="${entry.a}" data-tier="${entry.tier}">${a.label}</button>`;
+    }).join('') +
+      `<button class="action-btn secondary" data-alert="${alert.id}" data-action="ignore" data-tier="bad">Ignore</button>` +
+      `<button class="action-btn secondary" data-alert="${alert.id}" data-action="delay" data-tier="delay">Delay Decision</button>`;
+
+    card.innerHTML = `
+      <div class="alert-top">
+        <div class="alert-title-row">
+          <span class="alert-icon">${alert.def.icon}</span>
+          <span class="alert-title">${alert.def.type}</span>
+          ${alert.priorityRaw === 'critical' ? '<span class="crit-pulse"></span>' : ''}
+        </div>
+        <span class="priority-chip">${alert.priorityRaw}</span>
+      </div>
+      <div class="alert-desc">${alert.desc}</div>
+      <div class="alert-impact">Business impact: <b>$${alert.impactValue.toLocaleString()}</b> at risk · <b>${Math.ceil(alert.lifespan)}s</b> to act</div>
+      <div class="timeleft-track"><div class="timeleft-fill" id="fill-${alert.id}" style="width:100%"></div></div>
+      <div class="action-row">${actionsHtml}</div>
+    `;
+    els.alertFeed.prepend(card);
+    alert.node = card;
+
+    card.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', () => handleAction(alert.id, btn.dataset.action, btn.dataset.tier));
+    });
+  }
+
+  function updateAlertCount(){
+    const n = activeAlerts.filter(a => !a.resolved).length;
+    els.alertCount.textContent = n + (n === 1 ? ' open' : ' open');
+  }
+  function updateLogCount(){
+    els.logCount.textContent = els.eventLog.children.length + ' events';
+  }
+
+  function removeAlertCard(alert){
+    if(!alert.node) return;
+    alert.node.classList.add('resolving');
+    setTimeout(() => {
+      alert.node && alert.node.remove();
+      if(activeAlerts.filter(a=>!a.resolved).length === 0 && running){
+        const empty = document.createElement('div');
+        empty.className = 'empty-state'; empty.id='emptyState';
+        empty.textContent = 'All clear for now. Standing by for the next alert…';
+        els.alertFeed.appendChild(empty);
+        els.emptyState = empty;
+      }
+    }, 360);
+  }
+
+  /* ============================================================
+     ACTIONS & CONSEQUENCES
+     ============================================================ */
+  function handleAction(alertId, actionKey, tier){
+    const alert = activeAlerts.find(a => a.id === alertId && !a.resolved);
+    if(!alert) return;
+    alert.resolved = true;
+    updateAlertCount();
+    removeAlertCard(alert);
+
+    const actionLabel = ACTIONS[actionKey].label;
+
+    if(actionKey === 'delay'){
+      logEvent(`Delayed decision on ${alert.def.type}. Monitoring…`, 'neutral');
+      const willBackfire = Math.random() < 0.6;
+      alert.delayTimer = setTimeout(() => {
+        if(willBackfire){
+          applyOutcome(alert, 'bad', `Delay on ${alert.def.type} backfired — issue escalated.`);
+        } else {
+          applyOutcome(alert, 'good', `Delay on ${alert.def.type} paid off — situation resolved itself.`);
+        }
+      }, randInt(3500, 6000));
+      return;
+    }
+
+    if(actionKey === 'ignore'){
+      applyOutcome(alert, 'bad', `Ignored ${alert.def.type}. Impact absorbed by the business.`);
+      return;
+    }
+
+    const effectiveTier = tier; // 'best' | 'good' | 'poor'
+    applyOutcome(alert, effectiveTier, `Chose "${actionLabel}" for ${alert.def.type}.`);
+  }
+
+  function applyOutcome(alert, tierKey, message){
+    const fx = TIER_EFFECT[tierKey];
+    const kpiSign = tierKey === 'bad' || tierKey === 'poor' ? -1 : 1;
+
+    kpi.score += fx.score;
+    kpi.service = clamp(kpi.service + (tierKey==='bad'||tierKey==='poor' ? -Math.abs(fx.kpi) : Math.abs(fx.kpi)), 0, 100);
+    kpi.csat = clamp(kpi.csat + (tierKey==='bad'||tierKey==='poor' ? -Math.abs(fx.kpi) : Math.abs(fx.kpi)), 0, 100);
+    kpi.inventory = clamp(kpi.inventory + (fx.kpi > 0 ? fx.kpi*0.6 : fx.kpi), 0, 100);
+    kpi.transport = clamp(kpi.transport + (fx.kpi > 0 ? fx.kpi*0.6 : fx.kpi), 0, 100);
+    kpi.cost = clamp(kpi.cost + fx.cost, 0, 100);
+    kpi.revenue += Math.round(alert.impactValue * fx.revenueMult);
+
+    ['service','csat','inventory','transport'].forEach(k => flashKpi(k, kpiSign > 0));
+    flashKpi('cost', false);
+    flashKpi('revenue', fx.revenueMult > 0);
+    flashKpi('score', kpiSign > 0);
+
+    if(tierKey === 'best' || tierKey === 'good'){ stats.correct++; } else { stats.wrong++; }
+    stats.resolved++;
+
+    logEvent(message, TIER_EFFECT[tierKey].label);
+    updateAllKpiDisplays();
+  }
+
+  function autoExpire(alert){
+    if(alert.resolved) return;
+    alert.resolved = true;
+    updateAlertCount();
+    removeAlertCard(alert);
+    applyOutcome(alert, 'bad', `${alert.def.type} went unresolved and hit the business.`);
+  }
+
+  /* ============================================================
+     LOG
+     ============================================================ */
+  function logEvent(message, kind){
+    const li = document.createElement('li');
+    li.className = kind || 'neutral';
+    const t = fmtTime(SHIFT_SECONDS - elapsed);
+    li.innerHTML = `<span class="t">T-${t}</span>${message}`;
+    els.eventLog.prepend(li);
+    while(els.eventLog.children.length > 60) els.eventLog.removeChild(els.eventLog.lastChild);
+    updateLogCount();
+  }
+
+  /* ============================================================
+     TIMER RING
+     ============================================================ */
+  const RING_CIRC = 2 * Math.PI * 27;
+  function updateRing(){
+    const remaining = Math.max(0, SHIFT_SECONDS - elapsed);
+    const frac = remaining / SHIFT_SECONDS;
+    const offset = RING_CIRC * (1 - frac);
+    els.ringFg.setAttribute('stroke-dasharray', RING_CIRC);
+    els.ringFg.setAttribute('stroke-dashoffset', offset);
+    els.ringFg.style.stroke = frac < 0.15 ? 'var(--red)' : frac < 0.4 ? 'var(--orange)' : 'var(--cyan)';
+    els.ringLabel.textContent = fmtTime(remaining);
+  }
+
+  /* ============================================================
+     MAIN LOOP
+     ============================================================ */
+  function tick(){
+    if(paused || !running) return;
+    elapsed += TICK_MS/1000;
+
+    if(elapsed >= SHIFT_SECONDS){
+      elapsed = SHIFT_SECONDS;
+      updateRing();
+      endGame();
+      return;
+    }
+
+    const fraction = elapsed / SHIFT_SECONDS;
+    spawnAccumulator += TICK_MS/1000;
+    const openCount = activeAlerts.filter(a=>!a.resolved).length;
+    if(spawnAccumulator >= spawnIntervalFor(fraction) && openCount < maxConcurrentFor(fraction)){
+      spawnAccumulator = 0;
+      spawnAlert();
+    }
+
+    activeAlerts.forEach(alert => {
+      if(alert.resolved) return;
+      alert.remaining -= TICK_MS/1000;
+      const fillEl = document.getElementById('fill-' + alert.id);
+      if(fillEl){
+        const pct = clamp((alert.remaining / alert.lifespan) * 100, 0, 100);
+        fillEl.style.width = pct + '%';
+        fillEl.style.background = pct < 25 ? 'var(--red)' : pct < 55 ? 'var(--orange)' : 'var(--cyan)';
+      }
+      if(alert.remaining <= 0){
+        autoExpire(alert);
+      }
+    });
+
+    updateRing();
+  }
+
+  /* ============================================================
+     START / END / RESET
+     ============================================================ */
+  function startGame(){
+    resetState();
+    buildTicker();
+    running = true;
+    els.startOverlay.classList.add('hidden');
+    els.endOverlay.classList.add('hidden');
+    logEvent('Shift started. Monitoring global network…', 'neutral');
+    tickHandle = setInterval(tick, TICK_MS);
+  }
+
+  function endGame(){
+    running = false;
+    clearInterval(tickHandle);
+    activeAlerts.forEach(a => { if(a.delayTimer) clearTimeout(a.delayTimer); });
+
+    const kpiAvg = (kpi.service + kpi.csat + kpi.inventory + kpi.transport + (100-kpi.cost)) / 5;
+    const score = Math.round(kpi.score);
+
+    let grade = 'D';
+    if(score >= 2200 && kpiAvg >= 70) grade = 'A+';
+    else if(score >= 1600 && kpiAvg >= 60) grade = 'A';
+    else if(score >= 1000) grade = 'B';
+    else if(score >= 400) grade = 'C';
+
+    const gradeColor = { 'A+':'var(--green)', 'A':'var(--green)', 'B':'var(--cyan)', 'C':'var(--orange)', 'D':'var(--red)' }[grade];
+    els.gradeBadge.textContent = grade;
+    els.gradeBadge.style.color = gradeColor;
+    els.gradeBadge.style.borderColor = gradeColor;
+    els.gradeBadge.style.boxShadow = `0 0 30px ${gradeColor}55`;
+    els.finalScore.textContent = score.toLocaleString();
+
+    els.endStats.innerHTML = `
+      <div><div class="l">Service Level</div><div class="v">${Math.round(kpi.service)}%</div></div>
+      <div><div class="l">Cust. Satisfaction</div><div class="v">${Math.round(kpi.csat)}%</div></div>
+      <div><div class="l">Inventory Health</div><div class="v">${Math.round(kpi.inventory)}%</div></div>
+      <div><div class="l">Transport Efficiency</div><div class="v">${Math.round(kpi.transport)}%</div></div>
+      <div><div class="l">Operating Cost Index</div><div class="v">${Math.round(kpi.cost)}</div></div>
+      <div><div class="l">Revenue Protected</div><div class="v">$${Math.round(kpi.revenue).toLocaleString()}</div></div>
+      <div><div class="l">Alerts Resolved</div><div class="v">${stats.resolved}</div></div>
+      <div><div class="l">Correct / Wrong</div><div class="v">${stats.correct} / ${stats.wrong}</div></div>
+    `;
+
+    const summaries = {
+      'A+': "An exceptional shift. You anticipated disruption, protected revenue, and kept every KPI in strong shape — this is control-tower operations at its best.",
+      'A':  "A strong shift overall. Most calls protected the network well, with only minor drag on cost or satisfaction.",
+      'B':  "A solid, workable shift. You kept the network running, though a few slower or weaker decisions left some value on the table.",
+      'C':  "A rough shift. Enough alerts slipped through or were handled sub-optimally that KPIs took a real hit.",
+      'D':  "A difficult shift. Too many issues went unresolved or ignored, and the network absorbed significant damage as a result."
+    };
+    els.endSummary.textContent = summaries[grade];
+
+    els.endOverlay.classList.remove('hidden');
+  }
+
+  /* ============================================================
+     CONTROLS
+     ============================================================ */
+  function togglePause(){
+    if(!running) return;
+    paused = !paused;
+    document.getElementById('pauseBtn').textContent = paused ? '▶' : '⏸';
+    document.getElementById('pauseBtn').classList.toggle('active', paused);
+    els.pausedFlag.classList.toggle('hidden', !paused);
+  }
+
+  function toggleSound(){
+    soundOn = !soundOn;
+    const btn = document.getElementById('soundBtn');
+    btn.textContent = soundOn ? '🔊' : '🔇';
+    btn.classList.toggle('active', soundOn);
+  }
+
+  /* ============================================================
+     WIRE UP
+     ============================================================ */
+  document.addEventListener('DOMContentLoaded', () => {
+    cacheEls();
+    resetState();
+    buildTicker();
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('playAgainBtn').addEventListener('click', () => {
+      els.endOverlay.classList.add('hidden');
+      els.startOverlay.classList.remove('hidden');
+    });
+    document.getElementById('pauseBtn').addEventListener('click', togglePause);
+    document.getElementById('soundBtn').addEventListener('click', toggleSound);
+    document.getElementById('helpBtn').addEventListener('click', () => els.helpOverlay.classList.remove('hidden'));
+    document.getElementById('startHelpBtn').addEventListener('click', () => els.helpOverlay.classList.remove('hidden'));
+    document.getElementById('closeHelpBtn').addEventListener('click', () => els.helpOverlay.classList.add('hidden'));
+  });
+
+})();
+</script>
+</body>
+</html>
