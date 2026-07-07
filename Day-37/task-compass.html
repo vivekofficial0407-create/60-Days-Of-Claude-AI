@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Compass — Tech Company</title>
+<style>
+  :root{
+    --bg1:#0b0f19; --bg2:#131826; --card:#161c2c; --card2:#1c2338;
+    --border: rgba(255,255,255,0.08);
+    --text: #e9edf5; --muted:#8892a8;
+    --accent:#7c9cff; --accent2:#7ee0c3;
+    --frontend:#7c9cff; --backend:#f0a35f; --qa:#7ee0c3; --pm:#e07ee0;
+    --ux:#ffd166; --support:#6fd3ff; --em:#ff8fa3; --sales:#c792ea; --devops:#9adb7c;
+    --radius: 18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color:var(--text);
+    background: linear-gradient(-45deg, #0b0f19, #12162a, #0f1a2a, #151027);
+    background-size: 400% 400%;
+    animation: gradientMove 18s ease infinite;
+    min-height:100%;
+    overflow-x:hidden;
+  }
+  @keyframes gradientMove{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+  }
+  .app{ max-width:980px; margin:0 auto; padding:28px 18px 80px; }
+  header.top{ text-align:center; margin-bottom:22px; }
+  header.top h1{
+    font-size:2.1rem; margin:0 0 4px; letter-spacing:0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-weight:800;
+  }
+  header.top p{ color:var(--muted); margin:0; font-size:0.95rem; }
+
+  .progress-wrap{ margin:22px 0 30px; }
+  .progress-stages{ display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.8rem; color:var(--muted); }
+  .progress-stages span.active{ color:var(--accent2); font-weight:600; }
+  .progress-bar-bg{ height:8px; border-radius:99px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  .progress-bar-fill{ height:100%; border-radius:99px; background:linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .5s ease; }
+
+  .glass{
+    background: rgba(255,255,255,0.035);
+    border:1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+  }
+
+  .ticket{
+    padding:22px 24px; margin-bottom:22px; position:relative; overflow:hidden;
+  }
+  .ticket::before{
+    content:''; position:absolute; left:0; top:0; bottom:0; width:5px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+  }
+  .ticket .tag{
+    display:inline-block; font-size:0.7rem; text-transform:uppercase; letter-spacing:1px;
+    color:var(--accent2); background: rgba(126,224,195,0.1); padding:4px 10px; border-radius:99px; margin-bottom:10px;
+  }
+  .ticket h2{ margin:0 0 8px; font-size:1.25rem; line-height:1.4; font-weight:700; }
+  .ticket .meta{ color:var(--muted); font-size:0.85rem; }
+
+  .roles-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:14px; margin:18px 0; }
+  .role-card{
+    cursor:grab; user-select:none; padding:16px 14px; border-radius:14px;
+    border:1px solid var(--border); background: var(--card2);
+    text-align:center; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    position:relative;
+  }
+  .role-card:hover{ transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); border-color: var(--role-color, var(--accent)); }
+  .role-card.dragging{ opacity:0.4; }
+  .role-card .emoji{ font-size:1.8rem; display:block; margin-bottom:6px; }
+  .role-card .name{ font-size:0.85rem; font-weight:600; }
+  .role-card .chip{
+    position:absolute; top:8px; right:8px; width:10px; height:10px; border-radius:50%;
+    background: var(--role-color, var(--accent));
+  }
+
+  .dropzone{
+    margin:18px 0; min-height:90px; border:2px dashed rgba(255,255,255,0.15);
+    border-radius:16px; display:flex; align-items:center; justify-content:center;
+    color:var(--muted); font-size:0.9rem; transition: all .2s ease; padding:12px; text-align:center;
+  }
+  .dropzone.dragover{ border-color: var(--accent2); background: rgba(126,224,195,0.06); color:var(--accent2); }
+  .dropzone.filled{ border-style:solid; border-color: var(--role-color, var(--accent2)); background: rgba(255,255,255,0.03); }
+
+  .order-slots{ display:flex; flex-wrap:wrap; gap:12px; margin:18px 0; align-items:center; }
+  .order-slot{
+    min-width:130px; min-height:80px; border:2px dashed rgba(255,255,255,0.15); border-radius:14px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--muted); font-size:0.8rem;
+    padding:10px; position:relative; transition:.2s ease;
+  }
+  .order-slot .step-num{ position:absolute; top:-10px; left:10px; background:var(--bg2); border:1px solid var(--border); border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:0.75rem; color:var(--accent2); }
+  .order-slot.dragover{ border-color:var(--accent2); background: rgba(126,224,195,0.06); }
+  .order-arrow{ color:var(--muted); font-size:1.3rem; }
+
+  .multi-slots{ display:grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin:18px 0; }
+  .multi-slot{
+    min-height:90px; border:2px dashed rgba(255,255,255,0.15); border-radius:14px;
+    display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:0.8rem; padding:10px; text-align:center; transition:.2s ease;
+  }
+  .multi-slot.dragover{ border-color:var(--accent2); background: rgba(126,224,195,0.06); }
+  .multi-slot.filled{ border-style:solid; border-color: var(--role-color, var(--accent2)); }
+
+  .btn{
+    border:none; padding:12px 26px; border-radius:99px; font-weight:700; font-size:0.95rem; cursor:pointer;
+    background: linear-gradient(90deg, var(--accent), var(--accent2)); color:#0b0f19;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{ transform: translateY(-2px); box-shadow: 0 8px 22px rgba(126,224,195,0.25); }
+  .btn:disabled{ opacity:0.35; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn.secondary{ background: rgba(255,255,255,0.08); color:var(--text); }
+  .actions{ display:flex; justify-content:flex-end; gap:12px; margin-top:10px; }
+
+  .reveal{ margin-top:20px; padding:18px; border-radius:14px; background: rgba(126,224,195,0.05); border:1px solid rgba(126,224,195,0.2); animation: fadeIn .4s ease; }
+  .reveal h3{ margin:0 0 8px; color:var(--accent2); font-size:1rem; }
+  .reveal p{ margin:6px 0; font-size:0.92rem; line-height:1.5; color: #d5dae6; }
+  .reveal .assist-list{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .reveal .assist-chip{ padding:5px 12px; border-radius:99px; background: rgba(255,255,255,0.06); font-size:0.78rem; border:1px solid var(--border); }
+
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  .flow-anim{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:16px 0; min-height:60px; }
+  .flow-node{
+    padding:10px 14px; border-radius:12px; background:var(--card2); border:1px solid var(--border); font-size:0.8rem; font-weight:600;
+    opacity:0; transform: translateY(10px) scale(0.9);
+  }
+  .flow-node.show{ animation: popIn .45s forwards ease; }
+  @keyframes popIn{ to{ opacity:1; transform:translateY(0) scale(1); } }
+  .flow-node .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; background:var(--role-color,var(--accent)); }
+
+  .screen{ display:none; animation: fadeIn .35s ease; }
+  .screen.active{ display:block; }
+
+  .chart-wrap{ display:flex; flex-wrap:wrap; gap:30px; justify-content:center; align-items:center; margin:26px 0; }
+  .bars{ display:flex; gap:22px; align-items:flex-end; height:220px; }
+  .bar-col{ display:flex; flex-direction:column; align-items:center; gap:8px; width:70px; }
+  .bar-track{ width:36px; height:170px; background:rgba(255,255,255,0.06); border-radius:10px 10px 4px 4px; display:flex; align-items:flex-end; overflow:hidden; }
+  .bar-fill{ width:100%; border-radius:10px 10px 4px 4px; transition: height 1s cubic-bezier(.2,.9,.3,1); }
+  .bar-label{ font-size:0.75rem; color:var(--muted); text-align:center; }
+  .bar-pct{ font-size:0.8rem; font-weight:700; }
+
+  .reflection-card{ padding:20px; margin-bottom:14px; }
+  .reflection-card h3{ margin:0 0 8px; font-size:1rem; }
+  .reflection-card p{ margin:0; color:#d5dae6; line-height:1.6; font-size:0.92rem; }
+
+  .celebrate{ text-align:center; padding:40px 20px; }
+  .celebrate .big-emoji{ font-size:3.5rem; display:block; margin-bottom:10px; animation: bounce 1.4s ease infinite; }
+  @keyframes bounce{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-14px);} }
+
+  .qcount{ font-size:0.8rem; color:var(--muted); margin-bottom:6px; }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.15); border-radius:8px; }
+
+  @media (max-width:600px){
+    header.top h1{ font-size:1.6rem; }
+    .roles-grid{ grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>🧭 Task Compass</h1>
+    <p>Learn how work flows through real organizations.</p>
+  </header>
+
+  <div class="progress-wrap">
+    <div class="progress-stages">
+      <span id="stageLabel1">1. Who Owns This?</span>
+      <span id="stageLabel2">2. Task Routing</span>
+      <span id="stageLabel3">3. Collaboration Challenge</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <div id="screen-stage1" class="screen active"></div>
+  <div id="screen-stage2" class="screen"></div>
+  <div id="screen-stage3" class="screen"></div>
+  <div id="screen-results" class="screen"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- DATA ---------------- */
+
+const ROLES = [
+  {id:'fe', name:'Frontend Developer', emoji:'🖥️', color:'var(--frontend)'},
+  {id:'be', name:'Backend Developer', emoji:'🗄️', color:'var(--backend)'},
+  {id:'qa', name:'QA Engineer', emoji:'🔍', color:'var(--qa)'},
+  {id:'pm', name:'Product Manager', emoji:'📋', color:'var(--pm)'},
+  {id:'ux', name:'UX Designer', emoji:'🎨', color:'var(--ux)'},
+  {id:'support', name:'Customer Support', emoji:'💬', color:'var(--support)'},
+  {id:'em', name:'Engineering Manager', emoji:'🧑‍💼', color:'var(--em)'},
+  {id:'devops', name:'DevOps Engineer', emoji:'⚙️', color:'var(--devops)'},
+];
+function roleById(id){ return ROLES.find(r=>r.id===id); }
+
+// STAGE 1: ownership tasks
+const STAGE1_TASKS = [
+  {
+    title:"A customer reports that payments fail only on iPhones.",
+    owner:'fe', assist:['qa','be'],
+    why:"This is platform-specific UI behavior, which usually points to how the frontend renders or handles payment forms on iOS. The Frontend Developer investigates first since the failure is tied to a specific client, not the whole system."
+  },
+  {
+    title:"The database is returning slow query results during peak hours.",
+    owner:'be', assist:['devops','em'],
+    why:"Database performance is core backend infrastructure. The Backend Developer owns query optimization, while DevOps may assist with scaling resources."
+  },
+  {
+    title:"Users say the new checkout flow is confusing and hard to navigate.",
+    owner:'ux', assist:['pm','fe'],
+    why:"This is about usability and flow, which is the UX Designer's core responsibility. The Product Manager may help prioritize a fix, and the Frontend Developer implements changes."
+  },
+  {
+    title:"A critical bug slipped into production and wasn't caught before release.",
+    owner:'qa', assist:['em','be'],
+    why:"Catching bugs before release is QA's core ownership. The Engineering Manager may review the process gap, and the Backend Developer helps trace the root cause."
+  },
+  {
+    title:"Leadership wants to know if a new feature is worth building this quarter.",
+    owner:'pm', assist:['ux','em'],
+    why:"Prioritization and roadmap decisions belong to the Product Manager, who weighs business value. UX and Engineering Management help assess feasibility and user impact."
+  },
+  {
+    title:"A customer is angry about a billing error and threatens to cancel.",
+    owner:'support', assist:['pm','be'],
+    why:"Direct customer relationships and de-escalation are owned by Customer Support. They loop in Backend or Product if the billing error points to a system issue."
+  },
+  {
+    title:"The team keeps missing sprint deadlines for two months straight.",
+    owner:'em', assist:['pm','qa'],
+    why:"Team performance and delivery cadence are the Engineering Manager's responsibility. The Product Manager may adjust scope, and QA feedback may reveal quality bottlenecks."
+  },
+  {
+    title:"The app crashes when deploying to production, but works fine in staging.",
+    owner:'devops', assist:['be','qa'],
+    why:"Environment-specific deployment issues are core DevOps territory. The Backend Developer helps investigate code-level causes, and QA verifies staging parity."
+  },
+  {
+    title:"A/B test data shows a new button color increases signups by 12%.",
+    owner:'pm', assist:['ux','fe'],
+    why:"Interpreting experiment results and deciding whether to roll out the change is a Product Manager decision. UX validates the design rationale, and Frontend implements it."
+  },
+  {
+    title:"Several users report they can't log in after the latest update.",
+    owner:'be', assist:['qa','support'],
+    why:"Login failures usually stem from authentication logic, which the Backend Developer owns. QA helps reproduce the bug, and Support communicates with affected users."
+  }
+];
+
+// STAGE 2: routing tasks (correct order arrays)
+const STAGE2_TASKS = [
+  {
+    title:"A customer reports a bug through the help center.",
+    order:['support','qa','be','pm'],
+    why:"Support first captures the report from the customer. QA reproduces and confirms the bug. Backend fixes the underlying issue. Product Manager reviews and closes the loop with prioritization before it goes back to the customer."
+  },
+  {
+    title:"Marketing wants to launch a new pricing page next week.",
+    order:['pm','ux','fe','qa'],
+    why:"The Product Manager scopes the request and confirms priority. UX designs the layout and flow. Frontend builds it. QA verifies it works correctly before launch."
+  },
+  {
+    title:"A security vulnerability is discovered in the login system.",
+    order:['em','be','qa','devops','support'],
+    why:"The Engineering Manager coordinates urgency and ownership. Backend patches the vulnerability. QA verifies the fix doesn't break anything. DevOps deploys the patch safely. Support communicates with any affected customers."
+  },
+  {
+    title:"A customer requests a new integration feature.",
+    order:['support','pm','ux','be'],
+    why:"Support relays the request from the customer. Product Manager evaluates feasibility and priority. UX designs how it should work. Backend builds the integration."
+  },
+  {
+    title:"The app needs a performance improvement before a big product demo.",
+    order:['em','be','devops','qa'],
+    why:"The Engineering Manager sets priority and timeline. Backend optimizes the code. DevOps ensures infrastructure supports the change. QA confirms performance gains without regressions."
+  },
+  {
+    title:"Design wants to test a redesigned onboarding flow with real users.",
+    order:['ux','pm','fe','qa'],
+    why:"UX creates the new flow concept. Product Manager approves scope and success metrics. Frontend implements the flow. QA tests it before it reaches users."
+  }
+];
+
+// STAGE 3: collaboration challenges
+const STAGE3_TASKS = [
+  {
+    title:"Customer satisfaction suddenly drops across the board.",
+    primary:'support', supporting:['pm','qa','em'],
+    why:"Customer Support usually notices the drop first through tickets and sentiment. Product Manager investigates root causes in the product itself. QA checks for recent bugs. Engineering Manager assesses whether recent releases are the cause.",
+    flow:"Support → Product Manager → Engineering Manager → QA → back to Support with updates for customers."
+  },
+  {
+    title:"Sales increase dramatically after a marketing campaign.",
+    primary:'devops', supporting:['be','em','pm'],
+    why:"A sudden surge in usage puts pressure on infrastructure, so DevOps monitors and scales systems. Backend ensures the app handles increased load. Engineering Manager coordinates urgent priorities. Product Manager tracks how the growth affects the roadmap.",
+    flow:"DevOps monitors load → alerts Backend and Engineering Manager → Product Manager adjusts priorities based on growth."
+  },
+  {
+    title:"Negative reviews appear online about a recent update.",
+    primary:'pm', supporting:['support','ux','qa'],
+    why:"The Product Manager owns understanding what went wrong with the release. Support gathers direct customer complaints. UX reviews whether the update harmed usability. QA checks for unnoticed bugs contributing to the backlash.",
+    flow:"Support collects feedback → Product Manager synthesizes → UX and QA investigate root causes → response plan shared with Support."
+  },
+  {
+    title:"A major feature is delayed just before its announced launch date.",
+    primary:'em', supporting:['pm','be','qa'],
+    why:"The Engineering Manager owns diagnosing why delivery slipped and resetting the plan. Product Manager decides whether to adjust scope or communicate a new date. Backend reports on technical blockers. QA confirms what's actually ready to ship.",
+    flow:"Engineering Manager assesses blockers → consults Backend and QA → Product Manager decides on scope/communication → announcement updated."
+  }
+];
+
+/* ---------------- STATE ---------------- */
+
+const state = {
+  stage: 1,
+  s1Index: 0, s1Results: [],
+  s2Index: 0, s2Results: [],
+  s3Index: 0, s3Results: [],
+};
+
+const TOTAL_QUESTIONS = 9; // 3 per stage
+function updateProgress(){
+  let done = 0;
+  if(state.stage===1) done = state.s1Index;
+  else if(state.stage===2) done = 3 + state.s2Index;
+  else if(state.stage===3) done = 6 + state.s3Index;
+  else done = 9;
+  const pct = Math.min(100, Math.round((done/TOTAL_QUESTIONS)*100));
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('stageLabel1').className = state.stage===1?'active':'';
+  document.getElementById('stageLabel2').className = state.stage===2?'active':'';
+  document.getElementById('stageLabel3').className = state.stage===3?'active':'';
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+/* pick 3 random unique task indices from a pool of length n */
+function pickThree(n){
+  const idx = shuffle([...Array(n).keys()]);
+  return idx.slice(0,3);
+}
+const s1Order = pickThree(STAGE1_TASKS.length);
+const s2Order = pickThree(STAGE2_TASKS.length);
+const s3Order = pickThree(STAGE3_TASKS.length);
+
+/* ---------------- DRAG HELPERS ---------------- */
+
+function makeRoleCard(role, draggableId){
+  const el = document.createElement('div');
+  el.className='role-card';
+  el.draggable = true;
+  el.style.setProperty('--role-color', role.color);
+  el.dataset.roleId = role.id;
+  el.innerHTML = `<div class="chip"></div><span class="emoji">${role.emoji}</span><span class="name">${role.name}</span>`;
+  el.addEventListener('dragstart', e=>{
+    e.dataTransfer.setData('text/plain', role.id);
+    el.classList.add('dragging');
+  });
+  el.addEventListener('dragend', ()=> el.classList.remove('dragging'));
+  return el;
+}
+
+function makeRolesGrid(containerRoles){
+  const grid = document.createElement('div');
+  grid.className='roles-grid';
+  shuffle(containerRoles).forEach(r=> grid.appendChild(makeRoleCard(r)));
+  return grid;
+}
+
+/* ================= STAGE 1 ================= */
+
+function renderStage1(){
+  state.stage = 1;
+  updateProgress();
+  const container = document.getElementById('screen-stage1');
+  container.innerHTML = '';
+  if(state.s1Index >= 3){ renderStage2(); return; }
+
+  const task = STAGE1_TASKS[s1Order[state.s1Index]];
+  const wrap = document.createElement('div');
+
+  const qcount = document.createElement('div');
+  qcount.className='qcount';
+  qcount.textContent = `Question ${state.s1Index+1} of 3 — Who Owns This?`;
+  wrap.appendChild(qcount);
+
+  const ticket = document.createElement('div');
+  ticket.className='glass ticket';
+  ticket.innerHTML = `<span class="tag">🎫 Incoming Ticket</span><h2>${task.title}</h2><div class="meta">Drag the role that should PRIMARILY own this task into the slot below.</div>`;
+  wrap.appendChild(ticket);
+
+  const dropzone = document.createElement('div');
+  dropzone.className='glass dropzone';
+  dropzone.textContent = 'Drop the owning role here';
+  dropzone.addEventListener('dragover', e=>{ e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', ()=> dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', e=>{
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    const roleId = e.dataTransfer.getData('text/plain');
+    const role = roleById(roleId);
+    dropzone.classList.add('filled');
+    dropzone.style.setProperty('--role-color', role.color);
+    dropzone.innerHTML = `<span style="font-size:1.4rem;margin-right:8px;">${role.emoji}</span> <strong>${role.name}</strong>`;
+    dropzone.dataset.chosen = roleId;
+    submitBtn.disabled = false;
+  });
+  wrap.appendChild(dropzone);
+
+  wrap.appendChild(makeRolesGrid(ROLES));
+
+  const actions = document.createElement('div');
+  actions.className='actions';
+  const submitBtn = document.createElement('button');
+  submitBtn.className='btn'; submitBtn.textContent='Submit Decision'; submitBtn.disabled = true;
+  actions.appendChild(submitBtn);
+  wrap.appendChild(actions);
+
+  const revealDiv = document.createElement('div');
+  wrap.appendChild(revealDiv);
+
+  submitBtn.addEventListener('click', ()=>{
+    const chosen = dropzone.dataset.chosen;
+    const correct = chosen === task.owner;
+    state.s1Results.push({correct, overAssigned:false});
+    submitBtn.disabled = true;
+    submitBtn.style.display='none';
+
+    const ownerRole = roleById(task.owner);
+    const assistRoles = task.assist.map(roleById);
+    revealDiv.innerHTML = `
+      <div class="glass reveal">
+        <h3>${correct? "✓ Great instinct — here's the full picture":"💡 Let's look at how this actually plays out"}</h3>
+        <p><strong>Primary Owner:</strong> ${ownerRole.emoji} ${ownerRole.name}</p>
+        <p><strong>Why they own it:</strong> ${task.why}</p>
+        <p><strong>Roles that may assist:</strong></p>
+        <div class="assist-list">${assistRoles.map(r=>`<span class="assist-chip">${r.emoji} ${r.name}</span>`).join('')}</div>
+      </div>
+    `;
+    const nextBtn = document.createElement('button');
+    nextBtn.className='btn'; nextBtn.style.marginTop='16px'; nextBtn.textContent = state.s1Index<2? 'Next Ticket →' : 'Continue to Stage 2 →';
+    revealDiv.appendChild(nextBtn);
+    nextBtn.addEventListener('click', ()=>{ state.s1Index++; renderStage1(); });
+  });
+
+  container.appendChild(wrap);
+}
+
+/* ================= STAGE 2 ================= */
+
+function renderStage2(){
+  state.stage = 2;
+  showScreen('screen-stage2');
+  updateProgress();
+  const container = document.getElementById('screen-stage2');
+  container.innerHTML = '';
+  if(state.s2Index >= 3){ renderStage3(); return; }
+
+  const task = STAGE2_TASKS[s2Order[state.s2Index]];
+  const numSteps = task.order.length;
+  const wrap = document.createElement('div');
+
+  const qcount = document.createElement('div');
+  qcount.className='qcount';
+  qcount.textContent = `Question ${state.s2Index+1} of 3 — Task Routing`;
+  wrap.appendChild(qcount);
+
+  const ticket = document.createElement('div');
+  ticket.className='glass ticket';
+  ticket.innerHTML = `<span class="tag">🔀 Route This Work</span><h2>${task.title}</h2><div class="meta">Drag roles into the ${numSteps} slots in the order work should flow.</div>`;
+  wrap.appendChild(ticket);
+
+  const slotsWrap = document.createElement('div');
+  slotsWrap.className='order-slots';
+  const slots = [];
+  for(let i=0;i<numSteps;i++){
+    const slot = document.createElement('div');
+    slot.className='order-slot';
+    slot.innerHTML = `<div class="step-num">${i+1}</div><span>Drop role</span>`;
+    slot.dataset.index = i;
+    slot.addEventListener('dragover', e=>{ e.preventDefault(); slot.classList.add('dragover'); });
+    slot.addEventListener('dragleave', ()=> slot.classList.remove('dragover'));
+    slot.addEventListener('drop', e=>{
+      e.preventDefault();
+      slot.classList.remove('dragover');
+      const roleId = e.dataTransfer.getData('text/plain');
+      const role = roleById(roleId);
+      slot.style.setProperty('--role-color', role.color);
+      slot.innerHTML = `<div class="step-num">${i+1}</div><span class="emoji" style="font-size:1.3rem;">${role.emoji}</span><span style="font-size:0.75rem;font-weight:600;">${role.name}</span>`;
+      slot.dataset.chosen = roleId;
+      checkAllFilled();
+    });
+    slots.push(slot);
+    slotsWrap.appendChild(slot);
+    if(i<numSteps-1){
+      const arrow = document.createElement('span');
+      arrow.className='order-arrow'; arrow.textContent='→';
+      slotsWrap.appendChild(arrow);
+    }
+  }
+  wrap.appendChild(slotsWrap);
+
+  // pool: correct roles + a couple distractors, shuffled
+  const distractorPool = ROLES.filter(r=> !task.order.includes(r.id));
+  const distractors = shuffle(distractorPool).slice(0, Math.min(2, distractorPool.length));
+  const poolRoles = shuffle(task.order.map(roleById).concat(distractors));
+  wrap.appendChild(makeRolesGrid(poolRoles));
+
+  const actions = document.createElement('div');
+  actions.className='actions';
+  const submitBtn = document.createElement('button');
+  submitBtn.className='btn'; submitBtn.textContent='Submit Route'; submitBtn.disabled = true;
+  actions.appendChild(submitBtn);
+  wrap.appendChild(actions);
+
+  function checkAllFilled(){
+    const filled = slots.every(s=>s.dataset.chosen);
+    submitBtn.disabled = !filled;
+  }
+
+  const revealDiv = document.createElement('div');
+  wrap.appendChild(revealDiv);
+
+  submitBtn.addEventListener('click', ()=>{
+    const chosenOrder = slots.map(s=>s.dataset.chosen);
+    const correct = JSON.stringify(chosenOrder) === JSON.stringify(task.order);
+    state.s2Results.push({correct});
+    submitBtn.disabled = true;
+    submitBtn.style.display='none';
+
+    revealDiv.innerHTML = `<div class="glass reveal"><h3>${correct? "✓ That's the flow real teams use":"🔎 Here's how this typically flows"}</h3>
+      <div class="flow-anim" id="flowAnim"></div>
+      <p>${task.why}</p></div>`;
+
+    const flowAnim = revealDiv.querySelector('#flowAnim');
+    task.order.forEach((rid, i)=>{
+      const role = roleById(rid);
+      const node = document.createElement('div');
+      node.className='flow-node';
+      node.style.setProperty('--role-color', role.color);
+      node.innerHTML = `<span class="dot"></span>${role.emoji} ${role.name}`;
+      flowAnim.appendChild(node);
+      setTimeout(()=> node.classList.add('show'), i*350);
+      if(i<task.order.length-1){
+        const arrow = document.createElement('span');
+        arrow.className='order-arrow'; arrow.textContent='→';
+        arrow.style.opacity='0';
+        flowAnim.appendChild(arrow);
+        setTimeout(()=>{ arrow.style.transition='opacity .3s'; arrow.style.opacity='1'; }, i*350+150);
+      }
+    });
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className='btn'; nextBtn.style.marginTop='16px';
+    nextBtn.textContent = state.s2Index<2? 'Next Task →' : 'Continue to Stage 3 →';
+    revealDiv.appendChild(nextBtn);
+    nextBtn.addEventListener('click', ()=>{ state.s2Index++; renderStage2(); });
+  });
+
+  container.appendChild(wrap);
+}
+
+/* ================= STAGE 3 ================= */
+
+function renderStage3(){
+  state.stage = 3;
+  showScreen('screen-stage3');
+  updateProgress();
+  const container = document.getElementById('screen-stage3');
+  container.innerHTML = '';
+  if(state.s3Index >= 3){ renderResults(); return; }
+
+  const task = STAGE3_TASKS[s3Order[state.s3Index]];
+  const wrap = document.createElement('div');
+
+  const qcount = document.createElement('div');
+  qcount.className='qcount';
+  qcount.textContent = `Question ${state.s3Index+1} of 3 — Collaboration Challenge`;
+  wrap.appendChild(qcount);
+
+  const ticket = document.createElement('div');
+  ticket.className='glass ticket';
+  ticket.innerHTML = `<span class="tag">🌐 Org-Wide Situation</span><h2>${task.title}</h2><div class="meta">Drag up to 4 roles who should be involved into the slots below.</div>`;
+  wrap.appendChild(ticket);
+
+  const NUM_SLOTS = 4;
+  const slotsWrap = document.createElement('div');
+  slotsWrap.className='multi-slots';
+  const slots = [];
+  for(let i=0;i<NUM_SLOTS;i++){
+    const slot = document.createElement('div');
+    slot.className='multi-slot';
+    slot.textContent = 'Drop a role';
+    slot.addEventListener('dragover', e=>{ e.preventDefault(); slot.classList.add('dragover'); });
+    slot.addEventListener('dragleave', ()=> slot.classList.remove('dragover'));
+    slot.addEventListener('drop', e=>{
+      e.preventDefault();
+      slot.classList.remove('dragover');
+      const roleId = e.dataTransfer.getData('text/plain');
+      // prevent duplicate
+      if(slots.some(s=>s.dataset.chosen===roleId)) return;
+      const role = roleById(roleId);
+      slot.classList.add('filled');
+      slot.style.setProperty('--role-color', role.color);
+      slot.innerHTML = `<span style="font-size:1.3rem;margin-right:6px;">${role.emoji}</span><strong style="font-size:0.85rem;">${role.name}</strong>`;
+      slot.dataset.chosen = roleId;
+      checkReady();
+    });
+    slots.push(slot);
+    slotsWrap.appendChild(slot);
+  }
+  wrap.appendChild(slotsWrap);
+  wrap.appendChild(makeRolesGrid(ROLES));
+
+  const actions = document.createElement('div');
+  actions.className='actions';
+  const submitBtn = document.createElement('button');
+  submitBtn.className='btn'; submitBtn.textContent='Submit Response Plan'; submitBtn.disabled = true;
+  actions.appendChild(submitBtn);
+  wrap.appendChild(actions);
+
+  function checkReady(){
+    const filledCount = slots.filter(s=>s.dataset.chosen).length;
+    submitBtn.disabled = filledCount < 1;
+  }
+
+  const revealDiv = document.createElement('div');
+  wrap.appendChild(revealDiv);
+
+  submitBtn.addEventListener('click', ()=>{
+    const chosen = slots.map(s=>s.dataset.chosen).filter(Boolean);
+    const gotPrimary = chosen.includes(task.primary);
+    const supportHits = chosen.filter(id=> task.supporting.includes(id)).length;
+    const onlyOne = chosen.length === 1;
+    state.s3Results.push({gotPrimary, supportHits, onlyOne, totalChosen: chosen.length});
+    submitBtn.disabled = true;
+    submitBtn.style.display='none';
+
+    const primaryRole = roleById(task.primary);
+    const supportRoles = task.supporting.map(roleById);
+    revealDiv.innerHTML = `<div class="glass reveal">
+      <h3>${gotPrimary? '✓ Solid read on ownership':"💡 Here's who typically leads this"}</h3>
+      <p><strong>Primary Owner:</strong> ${primaryRole.emoji} ${primaryRole.name}</p>
+      <p><strong>Supporting Teams:</strong></p>
+      <div class="assist-list">${supportRoles.map(r=>`<span class="assist-chip">${r.emoji} ${r.name}</span>`).join('')}</div>
+      <p style="margin-top:10px;"><strong>Reasoning:</strong> ${task.why}</p>
+      <p><strong>Possible Communication Flow:</strong> ${task.flow}</p>
+    </div>`;
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className='btn'; nextBtn.style.marginTop='16px';
+    nextBtn.textContent = state.s3Index<2? 'Next Situation →' : 'See My Results →';
+    revealDiv.appendChild(nextBtn);
+    nextBtn.addEventListener('click', ()=>{ state.s3Index++; renderStage3(); });
+  });
+
+  container.appendChild(wrap);
+}
+
+/* ================= RESULTS ================= */
+
+function computeScores(){
+  // Ownership: stage1 correctness
+  const ownershipCorrect = state.s1Results.filter(r=>r.correct).length;
+  const ownershipPct = Math.round((ownershipCorrect/3)*100);
+
+  // Workflow thinking: stage2 correctness
+  const workflowCorrect = state.s2Results.filter(r=>r.correct).length;
+  const workflowPct = Math.round((workflowCorrect/3)*100);
+
+  // Collaboration: stage3 - reward multiple correct roles chosen, and getting primary
+  let collabScore = 0;
+  state.s3Results.forEach(r=>{
+    let pts = 0;
+    if(r.gotPrimary) pts += 1;
+    pts += Math.min(r.supportHits, 3) * (2/3); // up to 2 more points
+    collabScore += pts;
+  });
+  const collabPct = Math.round((collabScore/ (3*3)) *100); // max 3 pts per q * 3 q
+
+  // Delegation: inverse of over-assigning in stage1 (drag one) + willingness to assign multiple in stage3
+  // over-assign proxy: in stage 3 did they assign only 1 role when problem needed multiple (under-collaboration)
+  const underCollabCount = state.s3Results.filter(r=>r.onlyOne).length;
+  const delegationPct = Math.max(10, Math.round(100 - (underCollabCount/3)*60));
+
+  return {
+    ownership: Math.max(0,Math.min(100,ownershipPct)),
+    delegation: Math.max(0,Math.min(100,delegationPct)),
+    collaboration: Math.max(0,Math.min(100,collabPct)),
+    workflow: Math.max(0,Math.min(100,workflowPct)),
+  };
+}
+
+function renderResults(){
+  state.stage = 4;
+  showScreen('screen-results');
+  document.getElementById('progressFill').style.width='100%';
+  document.querySelectorAll('.progress-stages span').forEach(s=>s.classList.remove('active'));
+
+  const scores = computeScores();
+  const container = document.getElementById('screen-results');
+  container.innerHTML = '';
+
+  const celebrate = document.createElement('div');
+  celebrate.className='glass celebrate';
+  celebrate.innerHTML = `<span class="big-emoji">🎉</span><h2 style="margin:0 0 6px;">You've completed Task Compass!</h2><p style="color:var(--muted);">Here's how you understood work moving through a tech company.</p>`;
+  container.appendChild(celebrate);
+
+  const chartCard = document.createElement('div');
+  chartCard.className='glass';
+  chartCard.style.padding='26px';
+  chartCard.style.marginTop='22px';
+  chartCard.innerHTML = `<h3 style="margin:0 0 6px;color:var(--accent2);">Your Understanding</h3><p style="color:var(--muted);font-size:0.85rem;margin:0 0 10px;">Not a score — a picture of how you think about work.</p>`;
+
+  const barsDefs = [
+    {key:'ownership', label:'Ownership', color:'var(--frontend)'},
+    {key:'delegation', label:'Delegation', color:'var(--backend)'},
+    {key:'collaboration', label:'Collaboration', color:'var(--qa)'},
+    {key:'workflow', label:'Workflow Thinking', color:'var(--pm)'},
+  ];
+
+  const chartWrap = document.createElement('div');
+  chartWrap.className='chart-wrap';
+  const bars = document.createElement('div');
+  bars.className='bars';
+  barsDefs.forEach(b=>{
+    const col = document.createElement('div');
+    col.className='bar-col';
+    col.innerHTML = `
+      <div class="bar-pct" style="color:${b.color}">${scores[b.key]}%</div>
+      <div class="bar-track"><div class="bar-fill" style="height:0%;background:${b.color};"></div></div>
+      <div class="bar-label">${b.label}</div>
+    `;
+    bars.appendChild(col);
+  });
+  chartWrap.appendChild(bars);
+  chartCard.appendChild(chartWrap);
+  container.appendChild(chartCard);
+
+  // animate bars after insertion
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      const fills = chartCard.querySelectorAll('.bar-fill');
+      fills.forEach((f,i)=>{ f.style.height = barsDefs[i] ? scores[barsDefs[i].key]+'%' : '0%'; });
+    }, 100);
+  });
+
+  // Reflection
+  const reflectionTitle = document.createElement('h3');
+  reflectionTitle.textContent = '📖 Final Reflection';
+  reflectionTitle.style.margin = '28px 0 12px';
+  reflectionTitle.style.color = 'var(--accent2)';
+  container.appendChild(reflectionTitle);
+
+  const reflections = buildReflections(scores);
+  reflections.forEach(r=>{
+    const card = document.createElement('div');
+    card.className='glass reflection-card';
+    card.innerHTML = `<h3>${r.title}</h3><p>${r.body}</p>`;
+    container.appendChild(card);
+  });
+
+  const restartWrap = document.createElement('div');
+  restartWrap.style.textAlign='center';
+  restartWrap.style.marginTop='26px';
+  const restartBtn = document.createElement('button');
+  restartBtn.className='btn secondary';
+  restartBtn.textContent='↺ Play Again';
+  restartBtn.addEventListener('click', ()=>{
+    state.s1Index=0; state.s1Results=[];
+    state.s2Index=0; state.s2Results=[];
+    state.s3Index=0; state.s3Results=[];
+    showScreen('screen-stage1');
+    renderStage1();
+  });
+  restartWrap.appendChild(restartBtn);
+  container.appendChild(restartWrap);
+}
+
+function buildReflections(scores){
+  const out = [];
+
+  // What you understood well
+  const best = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0];
+  const labelMap = {ownership:'ownership', delegation:'delegation', collaboration:'collaboration', workflow:'workflow thinking'};
+  out.push({
+    title: '✅ What you understood well',
+    body: `Your strongest area was ${labelMap[best[0]]}. This suggests you have a solid instinct for ${best[0]==='ownership'? 'identifying who is closest to a problem and should drive it forward.' : best[0]==='workflow'? 'how work should move between roles in a sensible order.' : best[0]==='collaboration'? 'recognizing when a problem needs more than one team.' : 'balancing responsibility across a team rather than centralizing it in one person.'}`
+  });
+
+  // Over-assignment
+  const underCollabCount = state.s3Results.filter(r=>r.onlyOne).length;
+  out.push({
+    title: '⚖️ Where you tended to over-assign responsibility',
+    body: underCollabCount >= 2
+      ? `In several Stage 3 situations, you assigned just one role to a problem that usually benefits from a few perspectives. It's common to look for a single owner, but complex organizational issues often move faster with a small, coordinated group.`
+      : `You generally avoided pinning complex situations on a single person, which is a good sign — most real workplace problems don't have one clean owner.`
+  });
+
+  // Underestimated collaboration
+  const avgSupportHits = state.s3Results.reduce((a,r)=>a+r.supportHits,0)/ (state.s3Results.length||1);
+  out.push({
+    title: '🤝 Where you underestimated collaboration',
+    body: avgSupportHits < 1.5
+      ? `In the Collaboration Challenge, you sometimes left out roles that typically play a supporting part in these situations. It can be easy to underestimate how many people quietly touch a single problem before it's resolved.`
+      : `You picked up on supporting roles fairly consistently, which reflects an understanding that most challenges ripple across more than one team.`
+  });
+
+  // One insight
+  out.push({
+    title: '💡 One insight about how organizations actually work',
+    body: `Many real workplace problems are solved by teams rather than individuals — ownership usually means "who drives the decision," not "who does everything." The healthiest organizations tend to pair clear ownership with easy collaboration, rather than choosing one over the other.`
+  });
+
+  return out;
+}
+
+/* ---------------- INIT ---------------- */
+renderStage1();
+
+})();
+</script>
+</body>
+</html>
