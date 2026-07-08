@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Speed Studio</title>
+<style>
+:root{
+  --bg:#0f1115;--bg2:#161922;--panel:#1b1f2a;--panel2:#20242f;--border:#2a2f3d;
+  --text:#e4e6eb;--sub:#8b93a7;--accent:#6c8cff;--accent2:#8b6cff;--good:#4ade80;--bad:#f87171;--warn:#fbbf24;
+  --caret:#6c8cff;--font:'Segoe UI',system-ui,sans-serif;--mono:'Consolas','Courier New',monospace;--fs:1.5rem;
+}
+[data-theme="light"]{--bg:#f4f5f8;--bg2:#eceef3;--panel:#ffffff;--panel2:#f7f8fb;--border:#dde1ea;--text:#1b1f2a;--sub:#5a6072;--accent:#3d5afe;--accent2:#7b3dfe;}
+[data-theme="ocean"]{--bg:#031421;--bg2:#052a3d;--panel:#08344a;--panel2:#0a3f59;--border:#125172;--text:#dff4ff;--sub:#8fc6e0;--accent:#22d3ee;--accent2:#38bdf8;}
+[data-theme="sunset"]{--bg:#1a0e12;--bg2:#2a1319;--panel:#331821;--panel2:#3d1c27;--border:#4a2230;--text:#fbe9ee;--sub:#c99aa8;--accent:#fb7185;--accent2:#fbbf24;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;transition:background .3s,color .3s;}
+.app{max-width:1200px;margin:0 auto;padding:20px;}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.logo{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-1px;}
+.logo span{font-weight:400;opacity:.6;font-size:.9rem;-webkit-text-fill-color:var(--sub);}
+.top-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+button,select{font-family:var(--font);cursor:pointer;}
+.icon-btn{background:var(--panel);border:1px solid var(--border);color:var(--sub);width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:.2s;}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+.select-sm{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px;font-size:.85rem;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.tab{background:var(--panel);border:1px solid var(--border);color:var(--sub);padding:8px 14px;border-radius:20px;font-size:.8rem;font-weight:600;transition:.2s;}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent;}
+.tab:hover:not(.active){border-color:var(--accent);color:var(--text);}
+.config-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px;align-items:center;}
+.config-group{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.config-label{font-size:.75rem;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-right:4px;}
+.chip{background:var(--panel);border:1px solid var(--border);color:var(--sub);padding:6px 12px;border-radius:8px;font-size:.8rem;font-weight:600;transition:.2s;}
+.chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.chip:hover:not(.active){border-color:var(--accent);}
+.stats-bar{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:18px;padding:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;}
+.stat{text-align:center;min-width:70px;}
+.stat-val{font-size:1.4rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;}
+.stat-lbl{font-size:.65rem;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;}
+.progress-wrap{height:5px;background:var(--border);border-radius:3px;margin-bottom:18px;overflow:hidden;}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .2s;}
+.type-area{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:36px;margin-bottom:16px;position:relative;min-height:200px;}
+.type-area.focused{box-shadow:0 0 0 2px var(--accent);}
+#textDisplay{font-family:var(--mono);font-size:var(--fs);line-height:1.9;letter-spacing:.5px;user-select:none;word-wrap:break-word;filter:blur(0);transition:filter .2s;}
+.type-area.paused #textDisplay{filter:blur(6px);}
+#textDisplay.focus-mode span.line-hidden{display:none;}
+.ch{color:var(--sub);position:relative;transition:color .1s;}
+.ch.correct{color:var(--text);}
+.ch.incorrect{color:var(--bad);background:rgba(248,113,113,.15);border-radius:3px;}
+.ch.extra{color:var(--bad);text-decoration:underline;}
+.ch.current{border-left:2px solid var(--caret);animation:blink 1s step-end infinite;}
+@keyframes blink{50%{border-color:transparent;}}
+.click-hint{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;border-radius:16px;font-size:1rem;color:#fff;cursor:pointer;backdrop-filter:blur(2px);}
+.pause-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;border-radius:16px;font-size:1.3rem;font-weight:700;color:#fff;}
+.hidden{display:none!important;}
+.controls-row{display:flex;justify-content:center;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+.btn{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:10px;font-weight:600;font-size:.85rem;transition:.2s;}
+.btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;}
+.btn.primary:hover{filter:brightness(1.1);}
+#customTextArea{width:100%;min-height:100px;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px;font-family:var(--mono);font-size:.9rem;margin-bottom:12px;resize:vertical;}
+.section-title{font-size:1.1rem;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px;}
+.dash{display:none;animation:fadein .4s;}
+.dash.show{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+.dash-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
+.dash-card .v{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.dash-card .l{font-size:.7rem;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
+.panel-box{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;}
+.panel-box h3{font-size:.9rem;margin-bottom:12px;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:768px){.two-col{grid-template-columns:1fr;}}
+svg.graph{width:100%;height:160px;}
+.heatmap{display:flex;flex-wrap:wrap;gap:4px;}
+.heat-key{width:34px;height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;font-family:var(--mono);background:var(--panel2);border:1px solid var(--border);}
+.badges{display:flex;flex-wrap:wrap;gap:10px;}
+.badge{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-size:.8rem;display:flex;align-items:center;gap:6px;}
+.badge.earned{border-color:var(--accent);background:rgba(108,140,255,.1);}
+.history-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.history-table th{text-align:left;color:var(--sub);padding:8px;font-size:.7rem;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.history-table td{padding:8px;border-bottom:1px solid var(--border);}
+.history-table tr:hover td{background:var(--panel2);}
+.summary-text{font-size:.9rem;line-height:1.7;color:var(--sub);}
+.summary-text b{color:var(--text);}
+footer{text-align:center;color:var(--sub);font-size:.75rem;margin-top:30px;padding:20px;}
+.kbd{background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:var(--mono);font-size:.75rem;}
+::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--panel);border:1px solid var(--accent);color:var(--text);padding:12px 22px;border-radius:10px;font-size:.85rem;font-weight:600;transition:.3s;opacity:0;z-index:999;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+<header>
+  <div class="logo">Typing Speed Studio <span>Adaptive Edition</span></div>
+  <div class="top-controls">
+    <select class="select-sm" id="themeSelect">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+      <option value="ocean">Ocean</option>
+      <option value="sunset">Sunset</option>
+    </select>
+    <button class="icon-btn" id="fontDown" title="Smaller font">A-</button>
+    <button class="icon-btn" id="fontUp" title="Larger font">A+</button>
+    <button class="icon-btn" id="soundToggle" title="Toggle sound">🔊</button>
+    <button class="icon-btn" id="historyToggle" title="Session history">📜</button>
+  </div>
+</header>
+
+<div class="tabs" id="modeTabs">
+  <button class="tab active" data-mode="time">Time</button>
+  <button class="tab" data-mode="words">Words</button>
+  <button class="tab" data-mode="quote">Quote</button>
+  <button class="tab" data-mode="programming">Programming</button>
+  <button class="tab" data-mode="custom">Custom Text</button>
+  <button class="tab" data-mode="adaptive">Adaptive</button>
+  <button class="tab" data-mode="focus">Focus</button>
+  <button class="tab" data-mode="zen">Zen</button>
+</div>
+
+<div class="config-row" id="configRow">
+  <div class="config-group" id="categoryGroup">
+    <span class="config-label">Category</span>
+  </div>
+  <div class="config-group" id="durationGroup"></div>
+</div>
+
+<textarea id="customTextArea" class="hidden" placeholder="Paste or type your custom practice text here, then click Start..."></textarea>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat"><div class="stat-val" id="statWPM">0</div><div class="stat-lbl">WPM</div></div>
+  <div class="stat"><div class="stat-val" id="statRaw">0</div><div class="stat-lbl">Raw WPM</div></div>
+  <div class="stat"><div class="stat-val" id="statCPM">0</div><div class="stat-lbl">CPM</div></div>
+  <div class="stat"><div class="stat-val" id="statAcc">100%</div><div class="stat-lbl">Accuracy</div></div>
+  <div class="stat"><div class="stat-val" id="statTime">0s</div><div class="stat-lbl">Elapsed</div></div>
+  <div class="stat"><div class="stat-val" id="statMistakes">0</div><div class="stat-lbl">Mistakes</div></div>
+  <div class="stat"><div class="stat-val" id="statStreak">0</div><div class="stat-lbl">Streak</div></div>
+  <div class="stat"><div class="stat-val" id="statPct">0%</div><div class="stat-lbl">Complete</div></div>
+  <div class="stat"><div class="stat-val" id="statRemain">-</div><div class="stat-lbl">Remaining</div></div>
+</div>
+<div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+<div class="type-area" id="typeArea">
+  <div id="textDisplay"></div>
+  <div class="click-hint hidden" id="clickHint">Click here or press any key to focus</div>
+  <div class="pause-overlay hidden" id="pauseOverlay">⏸ Paused — press Space to resume</div>
+</div>
+
+<div class="controls-row">
+  <button class="btn primary" id="startBtn">▶ Start</button>
+  <button class="btn" id="pauseBtn">⏸ Pause</button>
+  <button class="btn" id="restartBtn">↻ Restart (Tab)</button>
+  <button class="btn" id="newTextBtn">🔀 New Text</button>
+</div>
+
+<div id="dashboard" class="dash">
+  <div class="section-title">📊 Performance Analytics</div>
+  <div class="dash-grid" id="dashGrid"></div>
+  <div class="two-col">
+    <div class="panel-box"><h3>WPM Over Time</h3><svg class="graph" id="wpmGraph"></svg></div>
+    <div class="panel-box"><h3>Accuracy Over Time</h3><svg class="graph" id="accGraph"></svg></div>
+  </div>
+  <div class="two-col">
+    <div class="panel-box"><h3>Error Heatmap (Most Mistyped Keys)</h3><div class="heatmap" id="heatmap"></div></div>
+    <div class="panel-box"><h3>Character Breakdown</h3><div id="charBreak" class="summary-text"></div></div>
+  </div>
+  <div class="panel-box"><h3>Achievements</h3><div class="badges" id="badges"></div></div>
+  <div class="panel-box"><h3>Performance Summary</h3><div class="summary-text" id="summaryText"></div></div>
+</div>
+
+<div id="historyPanel" class="dash">
+  <div class="section-title">📜 Session History</div>
+  <div class="panel-box" style="overflow-x:auto">
+    <table class="history-table" id="historyTable">
+      <thead><tr><th>Date</th><th>Mode</th><th>Category</th><th>WPM</th><th>Accuracy</th><th>Time</th></tr></thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  Shortcuts: <span class="kbd">Tab</span> Restart &nbsp; <span class="kbd">Space</span> Pause/Resume &nbsp; <span class="kbd">Esc</span> Stop &nbsp; Built with pure HTML/CSS/JS — 100% offline, no data leaves your device.
+</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== DATA ===================== */
+const PASSAGES = {
+general:[
+"The quiet library held stories from every corner of the world, waiting patiently on wooden shelves for curious readers to discover them.",
+"Success is not final and failure is not fatal; it is the courage to continue that truly counts in the long run of life.",
+"A gentle breeze drifted through the open window, carrying with it the scent of fresh rain and blooming jasmine flowers.",
+"Technology continues to reshape how people communicate, learn, and work together across vast distances in remarkable new ways."
+],
+programming_html:[
+"<div class=\"container\"><header><h1>Welcome</h1><nav><a href=\"#home\">Home</a><a href=\"#about\">About</a></nav></header></div>",
+"<form action=\"/submit\" method=\"post\"><input type=\"text\" name=\"username\" required><button type=\"submit\">Send</button></form>"
+],
+programming_css:[
+".card{display:flex;flex-direction:column;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:transform .2s;}",
+"@media(max-width:768px){.grid{grid-template-columns:1fr;gap:10px;}.nav{flex-direction:column;}}"
+],
+programming_js:[
+"function debounce(fn,delay){let timer;return function(...args){clearTimeout(timer);timer=setTimeout(()=>fn.apply(this,args),delay);};}",
+"const users = data.filter(u => u.active).map(u => ({id:u.id,name:u.name.trim()})).sort((a,b)=>a.name.localeCompare(b.name));"
+],
+programming_python:[
+"def quicksort(arr):\n    if len(arr) <= 1:\n        return arr\n    pivot = arr[len(arr)//2]\n    left = [x for x in arr if x < pivot]\n    return quicksort(left)",
+"class Node:\n    def __init__(self, value):\n        self.value = value\n        self.next = None\n\n    def __repr__(self):\n        return f'Node({self.value})'"
+],
+programming_java:[
+"public class Stack<T> {\n    private List<T> items = new ArrayList<>();\n    public void push(T item) { items.add(item); }\n    public T pop() { return items.remove(items.size()-1); }\n}"
+],
+programming_cpp:[
+"int binarySearch(vector<int>& arr, int target) {\n    int lo = 0, hi = arr.size() - 1;\n    while (lo <= hi) {\n        int mid = (lo + hi) / 2;\n        if (arr[mid] == target) return mid;\n    }\n    return -1;\n}"
+],
+programming_sql:[
+"SELECT customers.name, COUNT(orders.id) AS total_orders FROM customers JOIN orders ON customers.id = orders.customer_id GROUP BY customers.name ORDER BY total_orders DESC;"
+],
+academic:[
+"The hypothesis was tested through a controlled experiment involving multiple variables, and the resulting data suggested a statistically significant correlation.",
+"According to recent research published in the journal, cognitive development in early childhood is heavily influenced by environmental and genetic factors."
+],
+business:[
+"Please find attached the quarterly financial report for your review. We would appreciate your feedback before the board meeting scheduled next Monday.",
+"Our team is committed to delivering exceptional value to stakeholders through strategic partnerships, operational efficiency, and sustainable long-term growth initiatives."
+],
+medical:[
+"The patient presented with acute abdominal pain, elevated white blood cell count, and mild fever, prompting further diagnostic imaging and laboratory tests.",
+"Administer the prescribed dosage twice daily with food to minimize gastrointestinal discomfort and monitor for any signs of allergic reaction."
+],
+legal:[
+"The plaintiff hereby alleges that the defendant breached the terms of the contract, resulting in substantial financial damages to be determined at trial.",
+"This agreement shall be governed by and construed in accordance with the laws of the jurisdiction, without regard to conflict of law principles."
+],
+creative:[
+"The old lighthouse stood alone against the crashing waves, its beam cutting through the fog like a silver blade slicing the darkness apart.",
+"She wandered through the abandoned garden, where wildflowers had reclaimed every path and ivy curled around forgotten statues like whispered secrets."
+],
+quotes:[
+"The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.",
+"In three words I can sum up everything I've learned about life: it goes on. Time keeps moving forward no matter what.",
+"Whether you think you can or you think you can't, you're right. Your mindset shapes the outcome of nearly everything you attempt."
+]
+};
+const CATEGORY_LABELS = {general:"General English",academic:"Academic",business:"Business",medical:"Medical",legal:"Legal",creative:"Creative Writing",programming:"Programming"};
+const PROG_LANGS = {html:"programming_html",css:"programming_css",js:"programming_js",python:"programming_python",java:"programming_java",cpp:"programming_cpp",sql:"programming_sql"};
+
+/* ===================== STATE ===================== */
+let state = {
+  mode:'time', category:'general', proglang:'js',
+  duration:30, wordCount:25,
+  text:'', typed:[], startTime:null, endTime:null, running:false, paused:false,
+  pauseStart:0, totalPaused:0, timerInterval:null,
+  mistakes:0, correctChars:0, incorrectChars:0, extraChars:0, missedChars:0,
+  streak:0, maxStreak:0, keyErrors:{}, wpmHistory:[], accHistory:[], rawKeystrokes:0,
+  adaptiveLevel:1, soundOn:true, fontSize:1.5
+};
+let personalBest = JSON.parse(localStorage.getItem('tss_best')||'{"wpm":0}');
+let history = JSON.parse(localStorage.getItem('tss_history')||'[]');
+
+/* ===================== DOM ===================== */
+const $ = id=>document.getElementById(id);
+const textDisplay=$('textDisplay'), typeArea=$('typeArea'), clickHint=$('clickHint');
+const durationGroup=$('durationGroup'), categoryGroup=$('categoryGroup');
+
+/* ===================== INIT UI ===================== */
+function buildCategoryChips(){
+  categoryGroup.innerHTML='<span class="config-label">Category</span>';
+  Object.keys(CATEGORY_LABELS).forEach(cat=>{
+    const b=document.createElement('button');
+    b.className='chip'+(cat===state.category?' active':'');
+    b.textContent=CATEGORY_LABELS[cat];
+    b.onclick=()=>{state.category=cat;buildCategoryChips();if(cat==='programming')buildLangChips();else clearLangChips();generateText();};
+    categoryGroup.appendChild(b);
+  });
+  if(state.category==='programming')buildLangChips();
+}
+function buildLangChips(){
+  clearLangChips();
+  const wrap=document.createElement('span');wrap.id='langChips';wrap.style.display='flex';wrap.style.gap='6px';wrap.style.flexWrap='wrap';
+  Object.keys(PROG_LANGS).forEach(l=>{
+    const b=document.createElement('button');
+    b.className='chip'+(l===state.proglang?' active':'');
+    b.textContent=l.toUpperCase();
+    b.onclick=()=>{state.proglang=l;buildLangChips();generateText();};
+    wrap.appendChild(b);
+  });
+  categoryGroup.appendChild(wrap);
+}
+function clearLangChips(){const e=$('langChips');if(e)e.remove();}
+
+function buildDurationOptions(){
+  durationGroup.innerHTML='';
+  if(state.mode==='time'){
+    durationGroup.innerHTML='<span class="config-label">Duration</span>';
+    [15,30,60,120].forEach(d=>{
+      const b=document.createElement('button');
+      b.className='chip'+(d===state.duration?' active':'');
+      b.textContent=d+'s';
+      b.onclick=()=>{state.duration=d;buildDurationOptions();generateText();};
+      durationGroup.appendChild(b);
+    });
+  } else if(state.mode==='words'){
+    durationGroup.innerHTML='<span class="config-label">Words</span>';
+    [25,50,100,250].forEach(w=>{
+      const b=document.createElement('button');
+      b.className='chip'+(w===state.wordCount?' active':'');
+      b.textContent=w;
+      b.onclick=()=>{state.wordCount=w;buildDurationOptions();generateText();};
+      durationGroup.appendChild(b);
+    });
+  }
+}
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    state.mode=tab.dataset.mode;
+    $('customTextArea').classList.toggle('hidden', state.mode!=='custom');
+    categoryGroup.style.display = (state.mode==='custom'||state.mode==='quote')?'none':'flex';
+    buildDurationOptions();
+    resetSession();
+    if(state.mode!=='custom')generateText();
+    else textDisplay.innerHTML='<span style="color:var(--sub)">Type your custom text above, then click Start.</span>';
+  };
+});
+
+/* ===================== TEXT GENERATION ===================== */
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function wordTarget(){return state.mode==='words'?state.wordCount:(state.mode==='time'?60:40);}
+
+function generateText(){
+  let pool;
+  if(state.mode==='quote'){ pool=PASSAGES.quotes; }
+  else if(state.mode==='programming' || state.category==='programming'){
+    pool = PASSAGES[PROG_LANGS[state.proglang]] || PASSAGES.programming_js;
+  } else {
+    pool = PASSAGES[state.category] || PASSAGES.general;
+  }
+  let base = pick(pool);
+  // For time/words modes, concatenate multiple passages to reach a target length
+  if(state.mode==='time' || state.mode==='words' || state.mode==='adaptive' || state.mode==='focus' || state.mode==='zen'){
+    let words = base.split(/\s+/);
+    let target = wordTarget();
+    let tries=0;
+    while(words.length < target && tries<30){
+      words = words.concat(pick(pool).split(/\s+/));
+      tries++;
+    }
+    if(state.mode==='words') words = words.slice(0,target);
+    base = words.join(' ');
+  }
+  state.text = base;
+  resetSession(false);
+  renderText();
+}
+
+/* ===================== RENDER ===================== */
+function renderText(){
+  const chars = state.text.split('');
+  let html='';
+  chars.forEach((c,i)=>{
+    let cls='ch';
+    if(i < state.typed.length){
+      cls += state.typed[i]===c ? ' correct':' incorrect';
+    } else if(i===state.typed.length){
+      cls += ' current';
+    }
+    let display = c===' ' ? '&nbsp;' : (c==='\n'?'<br>':escapeHtml(c));
+    html += `<span class="${cls}" data-i="${i}">${display}</span>`;
+  });
+  // extra chars typed beyond text length
+  if(state.typed.length > chars.length){
+    for(let i=chars.length;i<state.typed.length;i++){
+      html += `<span class="ch extra">${escapeHtml(state.typed[i])}</span>`;
+    }
+  }
+  textDisplay.innerHTML = html;
+  applyFocusMode();
+  scrollToCurrent();
+}
+function escapeHtml(c){return c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function applyFocusMode(){
+  if(state.mode!=='focus'){return;}
+  // Show only current "line" (~ split by sentences of ~60 chars around cursor)
+  const spans = textDisplay.querySelectorAll('.ch');
+  const cur = state.typed.length;
+  spans.forEach((s,i)=>{
+    const dist = i-cur;
+    s.style.display = (dist >= -5 && dist <= 70) ? '' : 'none';
+  });
+}
+function scrollToCurrent(){
+  const cur = textDisplay.querySelector('.current');
+  if(cur) cur.scrollIntoView({block:'nearest', inline:'nearest'});
+}
+
+/* ===================== SESSION LOGIC ===================== */
+function resetSession(regenerate=true){
+  clearInterval(state.timerInterval);
+  state.typed=[]; state.startTime=null; state.endTime=null; state.running=false; state.paused=false;
+  state.totalPaused=0; state.mistakes=0; state.correctChars=0; state.incorrectChars=0; state.extraChars=0;
+  state.streak=0; state.maxStreak=0; state.keyErrors={}; state.wpmHistory=[]; state.accHistory=[]; state.rawKeystrokes=0;
+  $('pauseOverlay').classList.add('hidden');
+  typeArea.classList.remove('paused');
+  updateStatsDisplay();
+  $('progressBar').style.width='0%';
+  $('dashboard').classList.remove('show');
+  if(regenerate) renderText();
+}
+
+function startSession(){
+  if(state.mode==='custom' && !state.text){
+    const val = $('customTextArea').value.trim();
+    if(!val){ showToast('Please enter custom text first'); return; }
+    state.text = val;
+    renderText();
+  }
+  if(!state.text) generateText();
+  state.running=true;
+  clickHint.classList.add('hidden');
+  typeArea.focus();
+  document.addEventListener('keydown', handleKeydown);
+}
+
+function tickTimer(){
+  if(!state.running || state.paused) return;
+  const elapsed = (Date.now()-state.startTime-state.totalPaused)/1000;
+  $('statTime').textContent = Math.floor(elapsed)+'s';
+  if(state.mode==='time'){
+    const remain = Math.max(0, state.duration-elapsed);
+    $('statRemain').textContent = Math.ceil(remain)+'s';
+    $('progressBar').style.width = Math.min(100,(elapsed/state.duration)*100)+'%';
+    if(remain<=0) return finishSession();
+  } else {
+    $('statRemain').textContent = Math.max(0,state.text.length - state.typed.length)+' ch';
+    $('progressBar').style.width = Math.min(100,(state.typed.length/state.text.length)*100)+'%';
+  }
+  computeLiveStats(elapsed);
+  if(Math.floor(elapsed)%2===0){
+    state.wpmHistory.push({t:Math.floor(elapsed), wpm:calcWPM(elapsed)});
+    state.accHistory.push({t:Math.floor(elapsed), acc:calcAccuracy()});
+  }
+}
+
+function calcWPM(elapsedSec){
+  const minutes = Math.max(elapsedSec/60, 1/60);
+  const words = state.correctChars/5;
+  return Math.max(0, Math.min(300, Math.round(words/minutes)));
+}
+function calcRawWPM(elapsedSec){
+  const minutes = Math.max(elapsedSec/60, 1/60);
+  const words = state.typed.length/5;
+  return Math.max(0, Math.min(400, Math.round(words/minutes)));
+}
+function calcAccuracy(){
+  const total = state.typed.length;
+  if(total===0) return 100;
+  return Math.max(0, Math.round((state.correctChars/total)*100));
+}
+
+function computeLiveStats(elapsedSec){
+  const wpm = calcWPM(elapsedSec);
+  const raw = calcRawWPM(elapsedSec);
+  $('statWPM').textContent=wpm;
+  $('statRaw').textContent=raw;
+  $('statCPM').textContent=Math.round(wpm*5);
+  $('statAcc').textContent=calcAccuracy()+'%';
+  $('statMistakes').textContent=state.mistakes;
+  $('statStreak').textContent=state.maxStreak;
+  $('statPct').textContent=Math.min(100,Math.round((state.typed.length/state.text.length)*100))+'%';
+}
+
+function updateStatsDisplay(){
+  $('statWPM').textContent='0';$('statRaw').textContent='0';$('statCPM').textContent='0';
+  $('statAcc').textContent='100%';$('statTime').textContent='0s';$('statMistakes').textContent='0';
+  $('statStreak').textContent='0';$('statPct').textContent='0%';
+  $('statRemain').textContent = state.mode==='time'?state.duration+'s':(state.text?state.text.length+' ch':'-');
+}
+
+/* ===================== INPUT HANDLING ===================== */
+function handleKeydown(e){
+  if(e.key==='Tab'){ e.preventDefault(); restartSession(); return; }
+  if(e.key==='Escape'){ e.preventDefault(); finishSession(true); return; }
+  if(e.key===' ' && state.running && (state.paused || !state.startTime)){
+    // allow space to resume/start but also count as char if typing already started with text
+  }
+  if(!state.running) return;
+  if(e.key==='Escape') return;
+
+  if(state.paused){
+    if(e.key===' '){ e.preventDefault(); togglePause(); }
+    return;
+  }
+
+  if(e.key==='Backspace'){
+    e.preventDefault();
+    if(state.typed.length>0){
+      const idx=state.typed.length-1;
+      const wasWrong = state.typed[idx]!==state.text[idx];
+      state.typed.pop();
+      if(!wasWrong && idx<state.text.length) state.correctChars=Math.max(0,state.correctChars-1);
+      renderText();
+    }
+    return;
+  }
+  if(e.key.length!==1) return;
+  e.preventDefault();
+
+  if(!state.startTime){
+    state.startTime=Date.now();
+    state.timerInterval=setInterval(tickTimer,200);
+  }
+
+  const idx = state.typed.length;
+  const expected = state.text[idx];
+  state.rawKeystrokes++;
+  playSound(e.key===expected);
+
+  if(idx < state.text.length){
+    if(e.key===expected){
+      state.correctChars++;
+      state.streak++;
+      state.maxStreak=Math.max(state.maxStreak,state.streak);
+    } else {
+      state.incorrectChars++;
+      state.mistakes++;
+      state.streak=0;
+      const k = expected===' '?'space':expected;
+      state.keyErrors[k]=(state.keyErrors[k]||0)+1;
+    }
+  } else {
+    state.extraChars++;
+    state.mistakes++;
+    state.streak=0;
+  }
+  state.typed.push(e.key);
+  renderText();
+
+  const elapsed=(Date.now()-state.startTime-state.totalPaused)/1000;
+  computeLiveStats(elapsed);
+
+  if(state.mode==='words' && state.typed.length>=state.text.length){ finishSession(); return; }
+  if((state.mode!=='time' && state.mode!=='zen') && state.typed.length>=state.text.length){ finishSession(); return; }
+  if(state.mode==='zen' && state.typed.length>=state.text.length){ generateText(); }
+}
+
+typeArea.addEventListener('click', ()=>{ if(!state.running) startSession(); typeArea.focus(); });
+typeArea.setAttribute('tabindex','0');
+typeArea.addEventListener('focus', ()=>typeArea.classList.add('focused'));
+typeArea.addEventListener('blur', ()=>typeArea.classList.remove('focused'));
+
+function togglePause(){
+  if(!state.running) return;
+  state.paused=!state.paused;
+  if(state.paused){
+    state.pauseStart=Date.now();
+    $('pauseOverlay').classList.remove('hidden');
+    typeArea.classList.add('paused');
+  } else {
+    state.totalPaused += Date.now()-state.pauseStart;
+    $('pauseOverlay').classList.add('hidden');
+    typeArea.classList.remove('paused');
+  }
+}
+$('pauseBtn').onclick=togglePause;
+$('startBtn').onclick=()=>{ if(!state.running) startSession(); };
+$('restartBtn').onclick=restartSession;
+$('newTextBtn').onclick=()=>{ generateText(); resetSession(false); };
+
+function restartSession(){
+  const keepText = state.mode==='custom' ? state.text : null;
+  resetSession(true);
+  if(keepText){ state.text=keepText; renderText(); }
+}
+
+/* ===================== FINISH & DASHBOARD ===================== */
+function finishSession(forced=false){
+  if(!state.running) return;
+  state.running=false;
+  clearInterval(state.timerInterval);
+  document.removeEventListener('keydown', handleKeydown);
+  const elapsed = Math.max(0.1,(Date.now()-state.startTime-state.totalPaused)/1000);
+  const wpm = calcWPM(elapsed);
+  const raw = calcRawWPM(elapsed);
+  const acc = calcAccuracy();
+  const consistency = calcConsistency();
+  const completion = Math.min(100, Math.round((state.typed.length/state.text.length)*100));
+
+  const session = {
+    date:new Date().toLocaleString(), mode:state.mode,
+    category: state.mode==='programming'||state.category==='programming' ? state.proglang.toUpperCase() : (CATEGORY_LABELS[state.category]||state.mode),
+    wpm, raw, acc, consistency, completion,
+    correct:state.correctChars, incorrect:state.incorrectChars, extra:state.extraChars,
+    missed: Math.max(0,state.text.length-state.typed.length),
+    mistakes:state.mistakes, duration:Math.round(elapsed), keyErrors:{...state.keyErrors},
+    wpmHistory:[...state.wpmHistory], accHistory:[...state.accHistory]
+  };
+  history.unshift(session);
+  history = history.slice(0,50);
+  localStorage.setItem('tss_history', JSON.stringify(history));
+  if(wpm > (personalBest.wpm||0)){
+    personalBest = {wpm, acc, date:session.date};
+    localStorage.setItem('tss_best', JSON.stringify(personalBest));
+    showToast('🎉 New Personal Best: '+wpm+' WPM!');
+  } else {
+    showToast('Session complete!');
+  }
+  renderDashboard(session);
+  $('dashboard').classList.add('show');
+  $('dashboard').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function calcConsistency(){
+  if(state.wpmHistory.length<2) return 100;
+  const vals = state.wpmHistory.map(h=>h.wpm);
+  const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const variance = vals.reduce((a,b)=>a+Math.pow(b-mean,2),0)/vals.length;
+  const sd = Math.sqrt(variance);
+  const cons = Math.max(0, Math.round(100-(sd/Math.max(mean,1))*100));
+  return Math.min(100,cons);
+}
+
+function percentileEstimate(wpm){
+  if(wpm>=100) return 99; if(wpm>=80) return 95; if(wpm>=65) return 85;
+  if(wpm>=50) return 70; if(wpm>=35) return 50; if(wpm>=20) return 25; return 10;
+}
+
+function renderDashboard(s){
+  $('dashGrid').innerHTML = [
+    ['WPM',s.wpm],['Raw WPM',s.raw],['Accuracy',s.acc+'%'],['Consistency',s.consistency+'%'],
+    ['Completion',s.completion+'%'],['Duration',s.duration+'s'],['Mistakes',s.mistakes],
+    ['Personal Best',personalBest.wpm+' WPM'],['Percentile','Top '+ (100-percentileEstimate(s.wpm)) +'%']
+  ].map(([l,v])=>`<div class="dash-card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+
+  drawGraph('wpmGraph', s.wpmHistory.map(h=>h.wpm), 'var(--accent)');
+  drawGraph('accGraph', s.accHistory.map(h=>h.acc), 'var(--good)', 100);
+
+  const errEntries = Object.entries(s.keyErrors).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  $('heatmap').innerHTML = errEntries.length ? errEntries.map(([k,v])=>{
+    const intensity = Math.min(1, v/5);
+    const col = `rgba(248,113,113,${0.25+intensity*0.6})`;
+    return `<div class="heat-key" style="background:${col}" title="${v} mistakes">${k==='space'?'␣':k}</div>`;
+  }).join('') : '<span class="summary-text">No mistyped keys — flawless run!</span>';
+
+  $('charBreak').innerHTML = `
+    <b>Correct:</b> ${s.correct} &nbsp; <b>Incorrect:</b> ${s.incorrect} &nbsp;
+    <b>Extra:</b> ${s.extra} &nbsp; <b>Missed:</b> ${s.missed}`;
+
+  const badgeDefs = [
+    {name:'Speed Demon', cond:s.wpm>=80, icon:'⚡'},
+    {name:'Sharpshooter', cond:s.acc>=98, icon:'🎯'},
+    {name:'Steady Hands', cond:s.consistency>=85, icon:'🖐️'},
+    {name:'Finisher', cond:s.completion>=100, icon:'🏁'},
+    {name:'Century Club', cond:s.wpm>=100, icon:'💯'},
+    {name:'Flawless', cond:s.mistakes===0, icon:'✨'},
+    {name:'Marathoner', cond:s.duration>=90, icon:'🏃'},
+    {name:'New Record', cond:s.wpm>=personalBest.wpm, icon:'🏆'}
+  ];
+  $('badges').innerHTML = badgeDefs.map(b=>`<div class="badge ${b.cond?'earned':''}">${b.icon} ${b.name}</div>`).join('');
+
+  $('summaryText').innerHTML = buildSummary(s, errEntries);
+}
+
+function drawGraph(id, data, color, maxOverride){
+  const svg = $(id);
+  if(!data || data.length<2){ svg.innerHTML='<text x="50%" y="50%" fill="var(--sub)" font-size="12" text-anchor="middle">Not enough data</text>'; return; }
+  const w=600,h=160,pad=20;
+  const max = maxOverride || Math.max(...data, 10);
+  const min = 0;
+  const stepX = (w-2*pad)/(data.length-1);
+  let points = data.map((v,i)=>{
+    const x=pad+i*stepX;
+    const y=h-pad-((v-min)/(max-min||1))*(h-2*pad);
+    return `${x},${y}`;
+  }).join(' ');
+  const area = `M${pad},${h-pad} L${points} L${w-pad},${h-pad} Z`;
+  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  svg.innerHTML = `
+    <defs><linearGradient id="grad${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#grad${id})"/>
+    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  `;
+}
+
+function buildSummary(s, errEntries){
+  let strengths=[], weaknesses=[];
+  if(s.wpm>=60) strengths.push('excellent typing speed');
+  else if(s.wpm>=35) strengths.push('solid typing speed');
+  else weaknesses.push('typing speed has room to grow — regular practice will help build muscle memory');
+
+  if(s.acc>=97) strengths.push('outstanding accuracy');
+  else if(s.acc>=90) strengths.push('good accuracy');
+  else weaknesses.push('accuracy dipped below 90% — slowing down slightly may reduce errors');
+
+  if(s.consistency>=80) strengths.push('very consistent rhythm');
+  else weaknesses.push('typing rhythm was uneven — try to maintain a steady pace rather than bursts');
+
+  const topKey = errEntries[0];
+  let keyNote = topKey ? `Your most commonly mistyped key was <b>"${topKey[0]}"</b> with ${topKey[1]} errors — targeted drills on that key could help.` : 'No recurring problem keys detected this session.';
+
+  return `Strengths: <b>${strengths.length?strengths.join(', '):'keep practicing to build strengths'}</b>.<br>
+  Areas to improve: <b>${weaknesses.length?weaknesses.join('; '):'no major weaknesses detected — great job!'}</b>.<br>
+  ${keyNote}<br>
+  You are estimated to type faster than approximately <b>${percentileEstimate(s.wpm)}%</b> of users on this platform.`;
+}
+
+/* ===================== HISTORY PANEL ===================== */
+function renderHistory(){
+  $('historyBody').innerHTML = history.map(h=>`
+    <tr><td>${h.date}</td><td>${h.mode}</td><td>${h.category}</td><td>${h.wpm}</td><td>${h.acc}%</td><td>${h.duration}s</td></tr>
+  `).join('') || '<tr><td colspan="6" style="color:var(--sub)">No sessions yet — complete a test to see history.</td></tr>';
+}
+$('historyToggle').onclick=()=>{
+  $('dashboard').classList.remove('show');
+  const panel=$('historyPanel');
+  panel.classList.toggle('show');
+  if(panel.classList.contains('show')){ renderHistory(); panel.scrollIntoView({behavior:'smooth'}); }
+};
+
+/* ===================== SETTINGS ===================== */
+$('themeSelect').onchange=e=>{ document.body.dataset.theme=e.target.value; localStorage.setItem('tss_theme',e.target.value); };
+$('fontUp').onclick=()=>{ state.fontSize=Math.min(3,state.fontSize+0.15); document.documentElement.style.setProperty('--fs',state.fontSize+'rem'); };
+$('fontDown').onclick=()=>{ state.fontSize=Math.max(0.9,state.fontSize-0.15); document.documentElement.style.setProperty('--fs',state.fontSize+'rem'); };
+$('soundToggle').onclick=()=>{
+  state.soundOn=!state.soundOn;
+  $('soundToggle').textContent = state.soundOn?'🔊':'🔇';
+};
+
+let audioCtx;
+function playSound(correct){
+  if(!state.soundOn) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.frequency.value = correct?600:220;
+    g.gain.value=0.04;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+0.04);
+  }catch(e){}
+}
+
+function showToast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+/* ===================== GLOBAL SHORTCUTS ===================== */
+document.addEventListener('keydown', e=>{
+  if(e.key==='Tab' && document.activeElement.tagName!=='TEXTAREA'){ e.preventDefault(); restartSession(); }
+});
+
+/* ===================== INIT ===================== */
+(function init(){
+  const savedTheme = localStorage.getItem('tss_theme')||'dark';
+  document.body.dataset.theme=savedTheme; $('themeSelect').value=savedTheme;
+  buildCategoryChips();
+  buildDurationOptions();
+  generateText();
+  clickHint.classList.remove('hidden');
+})();
+</script>
+</body>
+</html>
