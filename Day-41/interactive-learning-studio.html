@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Learning Studio — Supervised Learning Fundamentals</title>
+<style>
+:root{
+  --bg:#0b0f19;--bg2:#121826;--card:#161d2e;--card2:#1c2438;--border:#2a3448;
+  --text:#e6e9f0;--muted:#8b96ac;--accent:#6c8bff;--accent2:#9b6cff;--good:#3ddc97;
+  --bad:#ff6b6b;--warn:#ffb84d;--shadow:0 8px 30px rgba(0,0,0,.35);
+  --radius:16px;--font:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.6;min-height:100vh}
+.light{--bg:#f4f6fb;--bg2:#ffffff;--card:#ffffff;--card2:#f0f3fa;--border:#e0e5ef;--text:#1a2030;--muted:#5a6478}
+a{color:var(--accent)}
+.container{max-width:980px;margin:0 auto;padding:24px 20px 80px}
+header.top{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}
+.topbar{max-width:980px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+.brand span.badge{background:linear-gradient(135deg,var(--accent),var(--accent2));width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:.9rem}
+.progress-wrap{flex:1;min-width:200px;display:flex;align-items:center;gap:10px}
+.progress-bar{flex:1;height:8px;background:var(--card2);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .5s ease}
+.progress-text{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.iconbtn{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:.85rem;transition:.2s}
+.iconbtn:hover{border-color:var(--accent)}
+.xp-pill{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:.85rem;display:flex;gap:6px;align-items:center}
+section.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:24px;box-shadow:var(--shadow)}
+h1{font-size:2rem;margin-bottom:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{font-size:1.5rem;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+h3{font-size:1.15rem;margin:20px 0 10px;color:var(--accent)}
+p{margin-bottom:12px;color:var(--text)}
+.muted{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:720px){.grid2,.grid4{grid-template-columns:1fr}}
+.info-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.info-card h4{color:var(--accent);font-size:.9rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.badge-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:.8rem;color:var(--muted)}
+.module{display:none}
+.module.active{display:block}
+.module-locked{opacity:.5;pointer-events:none;filter:grayscale(60%)}
+.lock-msg{text-align:center;padding:40px 20px;color:var(--muted)}
+.analogy-box{background:linear-gradient(135deg,rgba(108,139,255,.1),rgba(155,108,255,.1));border-left:4px solid var(--accent);border-radius:10px;padding:16px 18px;margin:16px 0}
+.analogy-box h4{color:var(--accent);margin-bottom:6px;font-size:.9rem}
+.example-box{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:16px 0}
+.example-box h4{color:var(--good);margin-bottom:8px;font-size:.9rem;text-transform:uppercase;letter-spacing:.5px}
+.misconception{background:rgba(255,107,107,.08);border-left:4px solid var(--bad);border-radius:10px;padding:14px 18px;margin:10px 0}
+.misconception strong{color:var(--bad)}
+.takeaways{background:rgba(61,220,151,.08);border:1px solid rgba(61,220,151,.3);border-radius:12px;padding:16px 18px;margin:16px 0}
+.takeaways h4{color:var(--good);margin-bottom:8px}
+.takeaways ul{padding-left:20px}
+code,.code{font-family:'Consolas',monospace;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:#ffcb6b}
+pre{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;margin:12px 0}
+pre code{border:none;padding:0;background:none}
+.diagram{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin:16px 0;text-align:center}
+.diagram svg{max-width:100%;height:auto}
+.exercise{background:var(--card2);border:1px dashed var(--accent);border-radius:12px;padding:18px;margin:18px 0}
+.exercise h4{color:var(--accent2);margin-bottom:10px}
+.exercise input[type=text],.exercise input[type=number]{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-family:inherit;width:100%;margin:6px 0}
+.exercise input[type=range]{width:100%}
+button{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:10px;padding:10px 20px;font-size:.9rem;transition:.2s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent)}
+.feedback{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.9rem;display:none}
+.feedback.show{display:block}
+.feedback.correct{background:rgba(61,220,151,.15);color:var(--good);border:1px solid var(--good)}
+.feedback.incorrect{background:rgba(255,107,107,.15);color:var(--bad);border:1px solid var(--bad)}
+.quiz-q{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:18px;margin:16px 0}
+.quiz-q h4{margin-bottom:12px}
+.opt{display:block;width:100%;text-align:left;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;margin:6px 0}
+.opt:hover{border-color:var(--accent)}
+.opt.selected{border-color:var(--accent);background:rgba(108,139,255,.1)}
+.opt.correct-opt{border-color:var(--good);background:rgba(61,220,151,.15)}
+.opt.wrong-opt{border-color:var(--bad);background:rgba(255,107,107,.15)}
+.opt-explain{font-size:.85rem;color:var(--muted);margin-top:8px;display:none}
+.opt-explain.show{display:block}
+.quiz-summary{text-align:center;padding:24px;border-radius:12px;background:var(--card2);border:1px solid var(--border);margin-top:18px;display:none}
+.quiz-summary.show{display:block}
+.score-circle{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;margin:0 auto 14px;background:conic-gradient(var(--good) var(--pct,0%),var(--card2) 0)}
+.score-circle span{background:var(--bg2);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.nav-buttons{display:flex;justify-content:space-between;margin-top:24px;gap:10px;flex-wrap:wrap}
+footer.foot{text-align:center;color:var(--muted);padding:30px;font-size:.85rem}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--card);border:1px solid var(--good);color:var(--good);padding:12px 22px;border-radius:10px;box-shadow:var(--shadow);transition:.4s;z-index:100;opacity:0}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.module-nav{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.module-nav button{flex:1;min-width:120px;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:10px}
+.module-nav button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.module-nav button.done::after{content:" ✓"}
+.resource-list{list-style:none}
+.resource-list li{padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.resource-list li:last-child{border:none}
+table{width:100%;border-collapse:collapse;margin:14px 0}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;font-size:.9rem}
+th{background:var(--card2);color:var(--accent)}
+.cheat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.cheat-grid{grid-template-columns:1fr}}
+.print-only{display:none}
+@media print{
+  body *{visibility:hidden}
+  .print-only,.print-only *{visibility:visible}
+  .print-only{display:block;position:absolute;top:0;left:0;width:100%;color:#000;background:#fff}
+}
+.slider-out{font-weight:700;color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="top">
+<div class="topbar">
+<div class="brand"><span class="badge">🧠</span> Learning Studio</div>
+<div class="progress-wrap">
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<span class="progress-text" id="progressText">0% complete</span>
+</div>
+<div class="xp-pill">⭐ <span id="xpCount">0</span> XP</div>
+<button class="iconbtn" id="themeToggle">☀️ Light</button>
+<button class="iconbtn" id="printBtn">🖨️ Print Notes</button>
+</div>
+</header>
+
+<div class="container">
+
+<section class="card" id="intro">
+<h1>Supervised Learning Fundamentals</h1>
+<p class="muted">Regression & Classification — a complete, hands-on tutorial from first principles to practical mastery.</p>
+<div class="badge-row">
+<span class="chip">⏱ ~90 min</span>
+<span class="chip">📊 4 Modules</span>
+<span class="chip">📝 16 Quiz Questions</span>
+<span class="chip">🎯 Beginner → Intermediate</span>
+</div>
+<div class="grid2">
+<div class="info-card"><h4>Learning Objectives</h4>
+<ul style="padding-left:18px">
+<li>Explain what supervised learning is and how it differs from other ML paradigms</li>
+<li>Distinguish regression from classification problems</li>
+<li>Build intuition for linear & logistic regression, cost functions, and gradient descent</li>
+<li>Evaluate models using appropriate metrics (MSE, R², accuracy, precision/recall)</li>
+<li>Recognize and address overfitting, underfitting, and the bias-variance tradeoff</li>
+</ul></div>
+<div class="info-card"><h4>Prerequisites</h4>
+<p>Basic algebra (equations of a line), comfort with variables/functions. No prior ML experience required.</p>
+<h4 style="margin-top:14px">Expected Outcomes</h4>
+<p>You'll be able to identify supervised learning problems, choose regression vs classification, and reason about model performance and generalization like a practitioner.</p></div>
+</div>
+<div class="info-card" style="margin-top:16px">
+<h4>🏆 Reward System</h4>
+<p>Earn <strong>25 XP</strong> per quiz question answered correctly (max 400 XP), plus a <strong>50 XP</strong> completion bonus per module and a <strong>100 XP</strong> Mastery Badge for finishing the final challenge. Track your progress bar above — it fills as you complete modules!</p>
+</div>
+<div style="text-align:center;margin-top:20px">
+<button class="btn-primary" id="startBtn">Start Learning →</button>
+</div>
+</section>
+
+<div class="module-nav" id="moduleNav">
+<button data-m="1" class="active">1 · Foundations</button>
+<button data-m="2">2 · Regression</button>
+<button data-m="3">3 · Classification</button>
+<button data-m="4">4 · Mastery</button>
+</div>
+
+<!-- MODULE 1 -->
+<section class="card module active" id="mod1">
+<h2>📘 Module 1: Foundations of Supervised Learning</h2>
+<p>Supervised learning is a branch of machine learning where a model learns a mapping from <strong>inputs (features)</strong> to <strong>known outputs (labels)</strong> using a dataset of labeled examples. The word "supervised" comes from the fact that a "teacher" (the labeled data) shows the algorithm the correct answers during training.</p>
+
+<div class="analogy-box"><h4>🔍 Analogy</h4><p>Think of a supervised learning model as a student studying with flashcards that already have the answers on the back. The student (model) looks at each question (features), guesses an answer, checks the back of the card (label), and adjusts their understanding. After enough flashcards, they can answer new questions they've never seen before.</p></div>
+
+<h3>Regression vs. Classification</h3>
+<p>The two core types of supervised learning problems differ in what kind of output they predict:</p>
+<table>
+<tr><th>Aspect</th><th>Regression</th><th>Classification</th></tr>
+<tr><td>Output type</td><td>Continuous number</td><td>Discrete category/class</td></tr>
+<tr><td>Example</td><td>Predicting house price ($)</td><td>Predicting spam vs. not-spam</td></tr>
+<tr><td>Typical metric</td><td>MSE, R²</td><td>Accuracy, Precision/Recall</td></tr>
+<tr><td>Question asked</td><td>"How much?"</td><td>"Which category?"</td></tr>
+</table>
+
+<div class="diagram"><svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+<text x="150" y="20" fill="#6c8bff" font-size="14" text-anchor="middle" font-weight="bold">Regression</text>
+<line x1="40" y1="180" x2="280" y2="180" stroke="#8b96ac" stroke-width="1"/>
+<line x1="40" y1="180" x2="40" y2="30" stroke="#8b96ac" stroke-width="1"/>
+<circle cx="70" cy="150" r="4" fill="#6c8bff"/><circle cx="100" cy="130" r="4" fill="#6c8bff"/>
+<circle cx="140" cy="120" r="4" fill="#6c8bff"/><circle cx="170" cy="95" r="4" fill="#6c8bff"/>
+<circle cx="210" cy="80" r="4" fill="#6c8bff"/><circle cx="250" cy="55" r="4" fill="#6c8bff"/>
+<line x1="55" y1="160" x2="265" y2="50" stroke="#9b6cff" stroke-width="2"/>
+<text x="490" y="20" fill="#6c8bff" font-size="14" text-anchor="middle" font-weight="bold">Classification</text>
+<line x1="380" y1="180" x2="620" y2="180" stroke="#8b96ac" stroke-width="1"/>
+<line x1="380" y1="180" x2="380" y2="30" stroke="#8b96ac" stroke-width="1"/>
+<circle cx="410" cy="150" r="5" fill="#3ddc97"/><circle cx="430" cy="130" r="5" fill="#3ddc97"/>
+<circle cx="405" cy="100" r="5" fill="#3ddc97"/><circle cx="450" cy="150" r="5" fill="#3ddc97"/>
+<circle cx="520" cy="70" r="5" fill="#ff6b6b"/><circle cx="560" cy="55" r="5" fill="#ff6b6b"/>
+<circle cx="540" cy="95" r="5" fill="#ff6b6b"/><circle cx="590" cy="60" r="5" fill="#ff6b6b"/>
+<line x1="470" y1="180" x2="490" y2="35" stroke="#ffb84d" stroke-width="2" stroke-dasharray="5,4"/>
+</svg><p class="muted" style="margin-top:8px">Left: a continuous trend line fits scattered points. Right: a decision boundary separates two classes (green vs red).</p></div>
+
+<h3>Example: A Concrete Dataset</h3>
+<div class="example-box"><h4>Example</h4><p>Suppose we have data on houses: <code>square_footage</code>, <code>bedrooms</code>, <code>age</code> → these are <strong>features</strong>. If we predict <code>price</code>, that's regression. If we instead predict <code>sells_within_30_days: yes/no</code>, that's classification. Same features, different label type, different problem category.</p></div>
+
+<h3>Common Misconceptions</h3>
+<div class="misconception"><strong>Misconception:</strong> "Supervised learning means a human watches the model train." <br><strong>Reality:</strong> "Supervised" refers to the labeled training data acting as the supervisor/teacher — no human is watching in real time.</div>
+<div class="misconception"><strong>Misconception:</strong> "More features always means a better model." <br><strong>Reality:</strong> Irrelevant or redundant features can add noise and cause overfitting (covered in Module 4).</div>
+
+<h3>Interactive Exercise: Classify the Problem</h3>
+<div class="exercise"><h4>🎯 Try It: Regression or Classification?</h4>
+<p id="ex1q">Predicting a patient's body temperature from symptoms:</p>
+<button class="btn-secondary" onclick="checkEx1('regression',this)">Regression</button>
+<button class="btn-secondary" onclick="checkEx1('classification',this)">Classification</button>
+<div class="feedback" id="ex1fb"></div>
+</div>
+
+<div class="takeaways"><h4>✅ Key Takeaways</h4><ul>
+<li>Supervised learning maps inputs (features) to known outputs (labels) using labeled training data.</li>
+<li>Regression predicts continuous numbers; classification predicts discrete categories.</li>
+<li>The same dataset can support either problem type depending on what label you choose to predict.</li>
+</ul></div>
+
+<h3>📝 Quiz: Module 1</h3>
+<div id="quiz1"></div>
+</section>
+
+<!-- MODULE 2 -->
+<section class="card module" id="mod2">
+<h2>📗 Module 2: Regression — Predicting Numbers</h2>
+<p>Linear regression is the simplest and most foundational regression algorithm. It assumes a straight-line relationship between input features and the output: <code>y = wx + b</code>, where <code>w</code> is the weight (slope) and <code>b</code> is the bias (intercept).</p>
+
+<div class="analogy-box"><h4>🔍 Analogy</h4><p>Imagine tuning an old radio dial (the weight <code>w</code>) and a volume knob (the bias <code>b</code>) until the music (predictions) matches what you want to hear (actual values) as closely as possible across many stations (data points).</p></div>
+
+<h3>The Cost Function</h3>
+<p>To know how "wrong" our line is, we use a <strong>cost function</strong> — most commonly <strong>Mean Squared Error (MSE)</strong>:</p>
+<pre><code>MSE = (1/n) * Σ(y_actual - y_predicted)²</code></pre>
+<p>Squaring the errors penalizes large mistakes more heavily and ensures errors don't cancel out (a +5 error and a -5 error would sum to zero otherwise).</p>
+
+<h3>Gradient Descent</h3>
+<p>Gradient descent is the optimization algorithm that adjusts <code>w</code> and <code>b</code> step by step to minimize the cost function, moving in the direction that reduces error fastest — like walking downhill in fog by feeling which way slopes down.</p>
+
+<div class="diagram"><svg viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+<path d="M20,180 Q150,20 250,60 Q350,100 480,20" fill="none" stroke="#6c8bff" stroke-width="3"/>
+<circle cx="420" cy="35" r="6" fill="#ffb84d"/>
+<circle cx="360" cy="70" r="5" fill="#9b6cff"/>
+<circle cx="300" cy="85" r="5" fill="#9b6cff"/>
+<circle cx="250" cy="60" r="6" fill="#3ddc97"/>
+<text x="420" y="25" fill="#ffb84d" font-size="11" text-anchor="middle">start</text>
+<text x="250" y="45" fill="#3ddc97" font-size="11" text-anchor="middle">minimum</text>
+</svg><p class="muted" style="margin-top:6px">Gradient descent steps "downhill" on the cost curve toward the minimum error.</p></div>
+
+<h3>Interactive Exercise: Adjust the Line</h3>
+<div class="exercise"><h4>🎯 Try It: Fit the line to the points</h4>
+<label>Slope (w): <span class="slider-out" id="wOut">1.0</span></label>
+<input type="range" id="wSlider" min="-2" max="4" step="0.1" value="1">
+<label>Intercept (b): <span class="slider-out" id="bOut">0</span></label>
+<input type="range" id="bSlider" min="-50" max="50" step="1" value="0">
+<div class="diagram"><svg viewBox="0 0 400 200" id="regSvg" xmlns="http://www.w3.org/2000/svg">
+<line x1="30" y1="170" x2="380" y2="170" stroke="#8b96ac"/><line x1="30" y1="170" x2="30" y2="10" stroke="#8b96ac"/>
+<circle cx="60" cy="140" r="4" fill="#3ddc97"/><circle cx="110" cy="120" r="4" fill="#3ddc97"/>
+<circle cx="160" cy="100" r="4" fill="#3ddc97"/><circle cx="210" cy="80" r="4" fill="#3ddc97"/>
+<circle cx="260" cy="60" r="4" fill="#3ddc97"/><circle cx="310" cy="40" r="4" fill="#3ddc97"/>
+<line id="fitLine" x1="30" y1="170" x2="380" y2="20" stroke="#ff6b6b" stroke-width="2"/>
+</svg></div>
+<p class="muted" id="mseOut">Current MSE: —</p>
+</div>
+
+<h3>Comparison: Linear vs. Polynomial Regression</h3>
+<table><tr><th>Model</th><th>Best for</th><th>Risk</th></tr>
+<tr><td>Linear Regression</td><td>Simple, roughly linear trends</td><td>Underfits curved data</td></tr>
+<tr><td>Polynomial Regression</td><td>Curved, complex trends</td><td>Overfits with high degree</td></tr>
+</table>
+
+<h3>Common Misconceptions</h3>
+<div class="misconception"><strong>Misconception:</strong> "Lower training error always means a better model." <br><strong>Reality:</strong> A model can memorize training data (overfit) and still perform poorly on new data — generalization matters more than training error alone.</div>
+
+<div class="takeaways"><h4>✅ Key Takeaways</h4><ul>
+<li>Linear regression models relationships as <code>y = wx + b</code>.</li>
+<li>MSE quantifies prediction error; gradient descent minimizes it iteratively.</li>
+<li>Model complexity must match data complexity — too simple underfits, too complex overfits.</li>
+</ul></div>
+
+<h3>📝 Quiz: Module 2</h3>
+<div id="quiz2"></div>
+</section>
+
+<!-- MODULE 3 -->
+<section class="card module" id="mod3">
+<h2>📙 Module 3: Classification — Predicting Categories</h2>
+<p>While linear regression predicts numbers, <strong>logistic regression</strong> predicts probabilities that are then mapped to classes (e.g., spam/not spam). It squashes any input into a value between 0 and 1 using the <strong>sigmoid function</strong>.</p>
+<pre><code>sigmoid(z) = 1 / (1 + e^(-z))</code></pre>
+
+<div class="analogy-box"><h4>🔍 Analogy</h4><p>Think of logistic regression as a confidence dial. Instead of predicting an exact number, it predicts "how confident am I this email is spam?" — a value like 0.87, which we then round to a class using a threshold (usually 0.5).</p></div>
+
+<div class="diagram"><svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">
+<line x1="20" y1="90" x2="380" y2="90" stroke="#8b96ac"/><line x1="200" y1="10" x2="200" y2="170" stroke="#8b96ac"/>
+<path d="M20,160 C100,160 150,20 200,90 C250,160 300,20 380,20" fill="none" stroke="#6c8bff" stroke-width="3"/>
+<text x="20" y="180" fill="#8b96ac" font-size="10">z → -∞ (prob→0)</text>
+<text x="280" y="10" fill="#8b96ac" font-size="10">z → +∞ (prob→1)</text>
+</svg><p class="muted" style="margin-top:6px">The sigmoid curve maps any real number to a probability between 0 and 1.</p></div>
+
+<h3>Decision Boundaries</h3>
+<p>A decision boundary is the line (or curve) that separates predicted classes. Points on one side are classified as Class A, the other as Class B. More complex models can create curved boundaries; simple logistic regression creates straight (linear) boundaries.</p>
+
+<h3>Evaluation: The Confusion Matrix</h3>
+<table><tr><th></th><th>Predicted Positive</th><th>Predicted Negative</th></tr>
+<tr><td><strong>Actual Positive</strong></td><td>True Positive (TP)</td><td>False Negative (FN)</td></tr>
+<tr><td><strong>Actual Negative</strong></td><td>False Positive (FP)</td><td>True Negative (TN)</td></tr>
+</table>
+<pre><code>Accuracy  = (TP+TN) / Total
+Precision = TP / (TP+FP)   → "Of predicted positives, how many were right?"
+Recall    = TP / (TP+FN)   → "Of actual positives, how many did we catch?"</code></pre>
+
+<div class="example-box"><h4>Example</h4><p>In a cancer-detection model, recall matters more than precision — missing a real cancer case (false negative) is far worse than a false alarm (false positive) that leads to extra testing.</p></div>
+
+<h3>Interactive Exercise: Compute the Confusion Matrix</h3>
+<div class="exercise"><h4>🎯 Try It</h4>
+<p>Given TP=40, FP=10, FN=5, TN=45, what is the <strong>Precision</strong>?</p>
+<input type="text" id="precInput" placeholder="e.g. 0.80">
+<button class="btn-primary" onclick="checkPrecision()">Check</button>
+<div class="feedback" id="precFb"></div>
+</div>
+
+<h3>Common Misconceptions</h3>
+<div class="misconception"><strong>Misconception:</strong> "High accuracy always means a good classifier." <br><strong>Reality:</strong> On imbalanced data (e.g., 95% not-spam), a model predicting "not spam" always gets 95% accuracy while being useless — check precision/recall too.</div>
+
+<div class="takeaways"><h4>✅ Key Takeaways</h4><ul>
+<li>Logistic regression outputs probabilities via the sigmoid function, then thresholds them into classes.</li>
+<li>Decision boundaries separate predicted classes in feature space.</li>
+<li>Accuracy can mislead on imbalanced datasets — precision and recall give a fuller picture.</li>
+</ul></div>
+
+<h3>📝 Quiz: Module 3</h3>
+<div id="quiz3"></div>
+</section>
+
+<!-- MODULE 4 -->
+<section class="card module" id="mod4">
+<h2>📕 Module 4: Mastery — Generalization & Model Selection</h2>
+<p>A model's true test is how well it performs on <strong>unseen data</strong>, not the data it trained on. This section covers the core tension in machine learning: the <strong>bias-variance tradeoff</strong>.</p>
+
+<h3>Overfitting vs. Underfitting</h3>
+<div class="grid2">
+<div class="info-card"><h4>Underfitting (High Bias)</h4><p>The model is too simple to capture patterns in the data. Both training and test error are high.</p></div>
+<div class="info-card"><h4>Overfitting (High Variance)</h4><p>The model memorizes noise in training data. Training error is low but test error is high.</p></div>
+</div>
+
+<div class="diagram"><svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg">
+<text x="100" y="18" fill="#ffb84d" font-size="12" text-anchor="middle">Underfit</text>
+<line x1="20" y1="170" x2="180" y2="170" stroke="#8b96ac"/><line x1="20" y1="170" x2="20" y2="30" stroke="#8b96ac"/>
+<circle cx="40" cy="140" r="3" fill="#3ddc97"/><circle cx="70" cy="100" r="3" fill="#3ddc97"/><circle cx="100" cy="120" r="3" fill="#3ddc97"/>
+<circle cx="130" cy="60" r="3" fill="#3ddc97"/><circle cx="160" cy="90" r="3" fill="#3ddc97"/>
+<line x1="20" y1="110" x2="180" y2="100" stroke="#ff6b6b" stroke-width="2"/>
+<text x="310" y="18" fill="#3ddc97" font-size="12" text-anchor="middle">Good Fit</text>
+<line x1="230" y1="170" x2="390" y2="170" stroke="#8b96ac"/><line x1="230" y1="170" x2="230" y2="30" stroke="#8b96ac"/>
+<circle cx="250" cy="140" r="3" fill="#3ddc97"/><circle cx="280" cy="100" r="3" fill="#3ddc97"/><circle cx="310" cy="120" r="3" fill="#3ddc97"/>
+<circle cx="340" cy="60" r="3" fill="#3ddc97"/><circle cx="370" cy="90" r="3" fill="#3ddc97"/>
+<path d="M250,140 Q280,90 310,115 Q340,60 370,90" fill="none" stroke="#ff6b6b" stroke-width="2"/>
+<text x="520" y="18" fill="#ff6b6b" font-size="12" text-anchor="middle">Overfit</text>
+<line x1="440" y1="170" x2="600" y2="170" stroke="#8b96ac"/><line x1="440" y1="170" x2="440" y2="30" stroke="#8b96ac"/>
+<circle cx="460" cy="140" r="3" fill="#3ddc97"/><circle cx="490" cy="100" r="3" fill="#3ddc97"/><circle cx="520" cy="120" r="3" fill="#3ddc97"/>
+<circle cx="550" cy="60" r="3" fill="#3ddc97"/><circle cx="580" cy="90" r="3" fill="#3ddc97"/>
+<path d="M460,140 C470,100 480,150 490,100 C500,60 510,150 520,120 C530,80 540,30 550,60 C560,110 570,50 580,90" fill="none" stroke="#ff6b6b" stroke-width="2"/>
+</svg></div>
+
+<div class="analogy-box"><h4>🔍 Analogy</h4><p>Underfitting is like studying only chapter titles before an exam — you miss the details. Overfitting is like memorizing the exact practice exam answers — you ace that exam but fail a slightly different real one.</p></div>
+
+<h3>Regularization</h3>
+<p>Regularization discourages overly complex models by adding a penalty for large weights to the cost function. Two common types:</p>
+<pre><code>L1 (Lasso): Cost + λ·Σ|w|   → can shrink some weights to exactly 0 (feature selection)
+L2 (Ridge): Cost + λ·Σw²    → shrinks weights smoothly, keeps all features</code></pre>
+
+<h3>Train/Validation/Test Workflow</h3>
+<p>Practitioners split data into three sets: <strong>train</strong> (fit the model), <strong>validation</strong> (tune hyperparameters like λ), and <strong>test</strong> (final, untouched evaluation). This prevents "peeking" at test data during tuning.</p>
+
+<h3>Interactive Exercise: Diagnose the Model</h3>
+<div class="exercise"><h4>🎯 Try It</h4>
+<p>Training error = 2%, Test error = 25%. What's happening?</p>
+<button class="btn-secondary" onclick="checkEx4('overfit',this)">Overfitting</button>
+<button class="btn-secondary" onclick="checkEx4('underfit',this)">Underfitting</button>
+<button class="btn-secondary" onclick="checkEx4('good',this)">Good Fit</button>
+<div class="feedback" id="ex4fb"></div>
+</div>
+
+<h3>Common Misconceptions</h3>
+<div class="misconception"><strong>Misconception:</strong> "Adding regularization always improves the model." <br><strong>Reality:</strong> Too much regularization (large λ) can cause underfitting by over-penalizing useful weights.</div>
+
+<div class="takeaways"><h4>✅ Key Takeaways</h4><ul>
+<li>Generalization — performance on unseen data — is the real goal, not training accuracy.</li>
+<li>Bias-variance tradeoff: simple models underfit (high bias), complex models overfit (high variance).</li>
+<li>Regularization (L1/L2) and proper train/validation/test splits help manage this tradeoff.</li>
+</ul></div>
+
+<h3>📝 Quiz: Module 4</h3>
+<div id="quiz4"></div>
+</section>
+
+<!-- FINAL CHALLENGE -->
+<section class="card" id="finalChallenge">
+<h2>🏁 Final Practical Challenge</h2>
+<p>You're given a dataset predicting whether a customer will churn (leave) a subscription service, using features like <code>monthly_usage</code>, <code>support_tickets</code>, and <code>tenure_months</code>. Answer the design questions below to complete the challenge.</p>
+<div class="exercise">
+<h4>Challenge Question 1</h4>
+<p>Is this a regression or classification problem?</p>
+<button class="btn-secondary" onclick="checkFinal(1,'classification',this)">Classification</button>
+<button class="btn-secondary" onclick="checkFinal(1,'regression',this)">Regression</button>
+<div class="feedback" id="finalFb1"></div>
+</div>
+<div class="exercise">
+<h4>Challenge Question 2</h4>
+<p>Your model has 98% training accuracy but only 60% test accuracy. What should you try first?</p>
+<button class="btn-secondary" onclick="checkFinal(2,'regularize',this)">Add regularization / simplify model</button>
+<button class="btn-secondary" onclick="checkFinal(2,'morefeatures',this)">Add more features</button>
+<div class="feedback" id="finalFb2"></div>
+</div>
+<div class="exercise">
+<h4>Challenge Question 3</h4>
+<p>Churn is rare (5% of customers). Which metric should you prioritize alongside accuracy?</p>
+<button class="btn-secondary" onclick="checkFinal(3,'recall',this)">Recall / Precision</button>
+<button class="btn-secondary" onclick="checkFinal(3,'mse',this)">MSE</button>
+<div class="feedback" id="finalFb3"></div>
+</div>
+<div id="finalComplete" style="display:none;text-align:center;margin-top:20px">
+<h3 style="color:var(--good)">🎉 Mastery Badge Earned! +100 XP</h3>
+</div>
+</section>
+
+<!-- CHEAT SHEET -->
+<section class="card">
+<h2>📋 Cheat Sheet</h2>
+<div class="cheat-grid">
+<div class="info-card"><h4>Core Formulas</h4>
+<pre><code>Linear: y = wx + b
+MSE = (1/n)Σ(y-ŷ)²
+Sigmoid: 1/(1+e^-z)
+Accuracy = (TP+TN)/Total
+Precision = TP/(TP+FP)
+Recall = TP/(TP+FN)</code></pre></div>
+<div class="info-card"><h4>Decision Guide</h4>
+<ul style="padding-left:18px">
+<li>Predicting a number → Regression</li>
+<li>Predicting a category → Classification</li>
+<li>Train acc high, test acc low → Overfitting → regularize/simplify</li>
+<li>Both accuracies low → Underfitting → add complexity/features</li>
+<li>Imbalanced classes → watch precision/recall, not just accuracy</li>
+</ul></div>
+</div>
+</section>
+
+<!-- SUMMARY -->
+<section class="card">
+<h2>📄 Summary Notes</h2>
+<p>Supervised learning trains models on labeled data to predict outputs for new inputs. <strong>Regression</strong> predicts continuous values using models like linear regression, optimized via gradient descent on a cost function such as MSE. <strong>Classification</strong> predicts discrete categories, commonly via logistic regression and the sigmoid function, evaluated with accuracy, precision, and recall via the confusion matrix. The ultimate goal is <strong>generalization</strong> — strong performance on unseen data — which requires balancing model complexity (bias-variance tradeoff) and using regularization plus proper train/validation/test splits.</p>
+</section>
+
+<!-- CONTINUE LEARNING -->
+<section class="card">
+<h2>🚀 Continue Learning</h2>
+<div class="grid2">
+<div class="info-card"><h4>📚 Books</h4><ul class="resource-list">
+<li>"An Introduction to Statistical Learning" — James, Witten, Hastie, Tibshirani</li>
+<li>"Hands-On Machine Learning" — Aurélien Géron</li>
+<li>"Pattern Recognition and Machine Learning" — Christopher Bishop</li>
+</ul></div>
+<div class="info-card"><h4>📖 Documentation</h4><ul class="resource-list">
+<li>scikit-learn: Supervised Learning Guide</li>
+<li>Google's Machine Learning Crash Course</li>
+</ul></div>
+<div class="info-card"><h4>📑 Research Papers</h4><ul class="resource-list">
+<li>"A Few Useful Things to Know About Machine Learning" — Pedro Domingos (2012)</li>
+<li>"Regularization and Variable Selection via the Elastic Net" — Zou & Hastie</li>
+</ul></div>
+<div class="info-card"><h4>👥 Communities</h4><ul class="resource-list">
+<li>r/MachineLearning</li>
+<li>Kaggle Discussion Forums</li>
+<li>Cross Validated (stats.stackexchange.com)</li>
+</ul></div>
+<div class="info-card"><h4>🛠 Practice Platforms</h4><ul class="resource-list">
+<li>Kaggle (datasets & competitions)</li>
+<li>Google Colab (free notebooks)</li>
+<li>scikit-learn built-in toy datasets</li>
+</ul></div>
+<div class="info-card"><h4>🔑 Search Keywords</h4><ul class="resource-list">
+<li>"linear regression from scratch python"</li>
+<li>"logistic regression sigmoid derivation"</li>
+<li>"bias variance tradeoff explained"</li>
+<li>"confusion matrix precision recall"</li>
+</ul></div>
+</div>
+<div class="info-card" style="margin-top:16px"><h4>🤖 Additional AI Prompts for Further Learning</h4><ul class="resource-list">
+<li>"Explain gradient descent step-by-step with a numeric example"</li>
+<li>"Walk me through building a logistic regression classifier in Python from scratch"</li>
+<li>"Give me 5 real-world regression problems and 5 classification problems to practice on"</li>
+<li>"Explain L1 vs L2 regularization with visual intuition"</li>
+</ul></div>
+</section>
+
+<div style="text-align:center;margin-bottom:20px">
+<button class="btn-secondary" id="resetBtn">↺ Reset Progress</button>
+</div>
+</div>
+
+<footer class="foot">Interactive Learning Studio · Supervised Learning Fundamentals · Built for focused, complete learning in one sitting.</footer>
+<div class="toast" id="toast"></div>
+
+<div class="print-only" id="printNotes"></div>
+
+<script>
+const state={modulesDone:[false,false,false,false],quizScores:[0,0,0,0],xp:0,unlocked:[true,false,false,false]};
+const $=s=>document.querySelector(s);
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function addXP(n){state.xp+=n;$('#xpCount').textContent=state.xp;}
+function updateProgress(){
+  const done=state.modulesDone.filter(Boolean).length;
+  const pct=Math.round(done/4*100);
+  $('#progressFill').style.width=pct+'%';
+  $('#progressText').textContent=pct+'% complete';
+}
+$('#themeToggle').onclick=()=>{
+  document.body.classList.toggle('light');
+  $('#themeToggle').textContent=document.body.classList.contains('light')?'🌙 Dark':'☀️ Light';
+};
+$('#startBtn').onclick=()=>document.getElementById('mod1').scrollIntoView({behavior:'smooth'});
+document.querySelectorAll('.module-nav button').forEach(btn=>{
+  btn.onclick=()=>{
+    const m=btn.dataset.m;
+    if(!state.unlocked[m-1]){toast('🔒 Complete the previous module quiz to unlock this one.');return;}
+    document.querySelectorAll('.module').forEach(mod=>mod.classList.remove('active'));
+    document.getElementById('mod'+m).classList.add('active');
+    document.querySelectorAll('.module-nav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('mod'+m).scrollIntoView({behavior:'smooth'});
+  };
+});
+function checkEx1(ans,btn){
+  const correct=ans==='regression';
+  const fb=$('#ex1fb');
+  fb.className='feedback show '+(correct?'correct':'incorrect');
+  fb.textContent=correct?'✅ Correct! Body temperature is a continuous number → regression.':'❌ Not quite — body temperature is a continuous number, so this is a regression problem.';
+}
+function checkEx4(ans,btn){
+  const correct=ans==='overfit';
+  const fb=$('#ex4fb');
+  fb.className='feedback show '+(correct?'correct':'incorrect');
+  fb.textContent=correct?'✅ Correct! Huge gap between train (2%) and test (25%) error signals overfitting.':'❌ Look at the gap between training and test error — a big gap points to overfitting.';
+}
+function checkPrecision(){
+  const val=parseFloat($('#precInput').value);
+  const correct=Math.abs(val-0.8)<0.02;
+  const fb=$('#precFb');
+  fb.className='feedback show '+(correct?'correct':'incorrect');
+  fb.textContent=correct?'✅ Correct! Precision = TP/(TP+FP) = 40/50 = 0.80':'❌ Precision = TP/(TP+FP) = 40/(40+10) = 0.80. Try again!';
+}
+function checkFinal(n,ans,btn){
+  const correctMap={1:'classification',2:'regularize',3:'recall'};
+  const correct=ans===correctMap[n];
+  const fb=$('#finalFb'+n);
+  fb.className='feedback show '+(correct?'correct':'incorrect');
+  const explain={1:'Churn (yes/no) is a category → classification.',2:'A big train/test gap means overfitting — regularize or simplify first.',3:'On rare/imbalanced classes, recall & precision matter more than raw accuracy.'};
+  fb.textContent=(correct?'✅ Correct! ':'❌ Not quite. ')+explain[n];
+  if(correct){
+    btn.dataset.correct='1';
+    const allCorrect=[1,2,3].every(i=>document.getElementById('finalFb'+i).classList.contains('correct'));
+    if(allCorrect){$('#finalComplete').style.display='block';addXP(100);toast('🏆 Mastery Badge earned! +100 XP');}
+  }
+}
+// Regression slider exercise
+const points=[[60,140],[110,120],[160,100],[210,80],[260,60],[310,40]];
+function updateReg(){
+  const w=parseFloat($('#wSlider').value), b=parseFloat($('#bSlider').value);
+  $('#wOut').textContent=w.toFixed(1); $('#bOut').textContent=b;
+  const x1=30,x2=380;
+  const y1=170-((-b)+ (170-(w*(x1-30)+170-b)) )*0; // placeholder unused
+  const yAt=x=> 170-(w*(x-30)*0.4)-b*0.5;
+  const line=$('#fitLine');
+  line.setAttribute('y1',Math.max(10,Math.min(190,yAt(x1))));
+  line.setAttribute('y2',Math.max(10,Math.min(190,yAt(x2))));
+  let mse=0;
+  points.forEach(p=>{const pred=yAt(p[0]);mse+=Math.pow(p[1]-pred,2);});
+  mse/=points.length;
+  $('#mseOut').textContent='Current MSE: '+mse.toFixed(1)+' (lower is better — try to minimize it!)';
+}
+$('#wSlider').oninput=updateReg; $('#bSlider').oninput=updateReg; updateReg();
+
+// Quiz data
+const quizzes={
+1:[
+{q:"What does 'supervised' refer to in supervised learning?",opts:["A human watching training in real time","Labeled data acting as a teacher","The model supervising itself","Cloud servers managing the model"],correct:1,explain:"Supervised learning uses labeled data (input-output pairs) that act as a 'teacher' guiding the model — no human watches training in real time."},
+{q:"Predicting a house's sale price is an example of:",opts:["Classification","Regression","Clustering","Reinforcement learning"],correct:1,explain:"Price is a continuous number, making this a regression problem."},
+{q:"Which is a classification problem?",opts:["Predicting tomorrow's temperature","Predicting a stock's exact price","Predicting if an email is spam or not","Predicting a car's fuel efficiency (mpg)"],correct:2,explain:"Spam/not-spam is a discrete category, making it classification."},
+{q:"Features and labels refer to:",opts:["Inputs and outputs of the model","Two types of algorithms","Training and testing errors","Types of neural networks"],correct:0,explain:"Features are the inputs the model uses; labels are the known outputs it learns to predict."}
+],
+2:[
+{q:"In y = wx + b, what does 'b' represent?",opts:["The slope","The bias/intercept","The error","The learning rate"],correct:1,explain:"'b' is the bias or intercept — where the line crosses the y-axis when x=0."},
+{q:"Why does MSE square the errors?",opts:["To make the math harder","To penalize larger errors more and prevent cancellation","To speed up computation only","Squaring is not actually used in MSE"],correct:1,explain:"Squaring prevents positive and negative errors from canceling out and heavily penalizes large mistakes."},
+{q:"What does gradient descent do?",opts:["Randomly guesses new weights","Iteratively adjusts weights to minimize the cost function","Increases the cost function on purpose","Removes features from the dataset"],correct:1,explain:"Gradient descent takes steps in the direction that reduces the cost function fastest, converging toward a minimum."},
+{q:"A model with very low training error but high test error is likely:",opts:["Underfitting","Perfectly fit","Overfitting","Using too few features"],correct:2,explain:"This gap is the classic sign of overfitting — the model memorized training data but doesn't generalize."}
+],
+3:[
+{q:"What does the sigmoid function output?",opts:["Any real number","A value between 0 and 1","Only 0 or 1","Negative numbers only"],correct:1,explain:"Sigmoid squashes any input into a probability-like value between 0 and 1."},
+{q:"Recall answers which question?",opts:["Of predicted positives, how many were correct?","Of actual positives, how many did we correctly identify?","What percentage of all predictions were correct?","How complex is the model?"],correct:1,explain:"Recall = TP/(TP+FN) — the fraction of actual positives correctly identified."},
+{q:"Why can accuracy be misleading on imbalanced data?",opts:["Accuracy is never a valid metric","A model can get high accuracy by always predicting the majority class","Accuracy only works for regression","Accuracy requires a confusion matrix to compute"],correct:1,explain:"With rare positive classes, always predicting 'negative' yields high accuracy while catching zero true positives."},
+{q:"A decision boundary in logistic regression is typically:",opts:["Always a perfect curve","A straight (linear) line by default","Randomly generated","Only relevant in regression"],correct:1,explain:"Basic logistic regression produces a linear decision boundary separating the two classes."}
+],
+4:[
+{q:"High bias (underfitting) means:",opts:["The model is too complex","The model is too simple to capture patterns","The model has zero error","The model only works on test data"],correct:1,explain:"Underfitting/high bias occurs when the model is too simple, missing real patterns — both train and test error are high."},
+{q:"What does L2 regularization do?",opts:["Deletes random data points","Adds a penalty (Σw²) to shrink weights smoothly","Increases model complexity","Removes the bias term"],correct:1,explain:"L2 (Ridge) regularization penalizes large weights with Σw², shrinking them smoothly without eliminating features."},
+{q:"Why use a separate validation set?",opts:["To tune hyperparameters without touching the test set","To make training faster","It's the same as the test set","To increase training data size"],correct:0,explain:"The validation set lets you tune hyperparameters like regularization strength while keeping the test set untouched for final evaluation."},
+{q:"The bias-variance tradeoff describes:",opts:["A tradeoff between training speed and accuracy","A tradeoff between model simplicity (bias) and sensitivity to data (variance)","A tradeoff between regression and classification","A hardware limitation in ML"],correct:1,explain:"Simple models have high bias/low variance; complex models have low bias/high variance — balance is key to generalization."}
+]};
+
+function buildQuiz(n){
+  const container=document.getElementById('quiz'+n);
+  const data=quizzes[n];
+  let html='';
+  data.forEach((item,qi)=>{
+    html+=`<div class="quiz-q" data-q="${qi}"><h4>Q${qi+1}. ${item.q}</h4>`;
+    item.opts.forEach((opt,oi)=>{
+      html+=`<button class="opt" onclick="answerQuiz(${n},${qi},${oi},this)">${opt}</button>`;
+    });
+    html+=`<div class="opt-explain" id="explain-${n}-${qi}">${item.explain}</div></div>`;
+  });
+  html+=`<div class="quiz-summary" id="summary${n}"><div class="score-circle" id="scoreCircle${n}"><span id="scoreText${n}">0/4</span></div><p id="summaryMsg${n}"></p><button class="btn-primary" id="unlockBtn${n}">Unlock Next Module →</button></div>`;
+  container.innerHTML=html;
+}
+[1,2,3,4].forEach(buildQuiz);
+
+const answered={1:{},2:{},3:{},4:{}};
+function answerQuiz(n,qi,oi,btn){
+  if(answered[n][qi]!==undefined)return;
+  answered[n][qi]=oi;
+  const item=quizzes[n][qi];
+  const qDiv=btn.closest('.quiz-q');
+  qDiv.querySelectorAll('.opt').forEach((o,idx)=>{
+    o.style.pointerEvents='none';
+    if(idx===item.correct)o.classList.add('correct-opt');
+    else if(idx===oi)o.classList.add('wrong-opt');
+  });
+  document.getElementById(`explain-${n}-${qi}`).classList.add('show');
+  if(oi===item.correct){addXP(25);}
+  if(Object.keys(answered[n]).length===quizzes[n].length)finishQuiz(n);
+}
+function finishQuiz(n){
+  let correctCount=0;
+  Object.keys(answered[n]).forEach(qi=>{if(answered[n][qi]===quizzes[n][qi].correct)correctCount++;});
+  state.quizScores[n-1]=correctCount;
+  const pct=Math.round(correctCount/quizzes[n].length*100);
+  document.getElementById('scoreCircle'+n).style.setProperty('--pct',pct+'%');
+  document.getElementById('scoreText'+n).textContent=correctCount+'/'+quizzes[n].length;
+  const msg=pct===100?'🌟 Perfect score! You mastered this module.':pct>=75?'👍 Great job! Solid understanding.':pct>=50?'📖 Good effort — consider reviewing the explanations above.':'🔄 Review the module content and try to internalize the key concepts.';
+  document.getElementById('summaryMsg'+n).textContent=msg;
+  document.getElementById('summary'+n).classList.add('show');
+  state.modulesDone[n-1]=true;
+  addXP(50);
+  updateProgress();
+  if(n<4){
+    state.unlocked[n]=true;
+    document.querySelectorAll('.module-nav button')[n-1].classList.add('done');
+    document.getElementById('unlockBtn'+n).onclick=()=>{
+      document.querySelectorAll('.module').forEach(mod=>mod.classList.remove('active'));
+      document.getElementById('mod'+(n+1)).classList.add('active');
+      document.querySelectorAll('.module-nav button').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.module-nav button')[n].classList.add('active');
+      document.getElementById('mod'+(n+1)).scrollIntoView({behavior:'smooth'});
+    };
+    toast('✅ Module '+n+' complete! Module '+(n+1)+' unlocked. +'+ (correctCount*25+50) +' XP');
+  }else{
+    document.querySelectorAll('.module-nav button')[3].classList.add('done');
+    document.getElementById('unlockBtn'+n).textContent='🎉 All Modules Complete!';
+    document.getElementById('unlockBtn'+n).onclick=()=>document.getElementById('finalChallenge').scrollIntoView({behavior:'smooth'});
+    toast('🎉 All 4 modules complete!');
+  }
+}
+
+$('#printBtn').onclick=()=>{
+  const notes=`
+  <h1>Supervised Learning Fundamentals — Summary Notes</h1>
+  <h2>Module 1: Foundations</h2>
+  <p>Supervised learning maps labeled inputs (features) to outputs (labels). Regression predicts continuous numbers; classification predicts discrete categories.</p>
+  <h2>Module 2: Regression</h2>
+  <p>Linear regression: y = wx + b. Cost measured via MSE. Gradient descent minimizes cost iteratively.</p>
+  <h2>Module 3: Classification</h2>
+  <p>Logistic regression uses the sigmoid function to output probabilities. Evaluate with accuracy, precision, recall via confusion matrix.</p>
+  <h2>Module 4: Mastery</h2>
+  <p>Generalization is the goal. Bias-variance tradeoff: simple models underfit, complex models overfit. Regularization (L1/L2) and train/validation/test splits manage this.</p>
+  <h2>Cheat Sheet</h2>
+  <p>MSE=(1/n)Σ(y-ŷ)² | Sigmoid=1/(1+e^-z) | Accuracy=(TP+TN)/Total | Precision=TP/(TP+FP) | Recall=TP/(TP+FN)</p>
+  <p>Your Score: Module1 ${state.quizScores[0]}/4, Module2 ${state.quizScores[1]}/4, Module3 ${state.quizScores[2]}/4, Module4 ${state.quizScores[3]}/4 — Total XP: ${state.xp}</p>`;
+  document.getElementById('printNotes').innerHTML=notes;
+  window.print();
+};
+$('#resetBtn').onclick=()=>{if(confirm('Reset all progress?'))location.reload();};
+updateProgress();
+</script>
+</body>
+</html>
