@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workflow Architect — Browser-Based AI Portfolio Project</title>
+<style>
+:root{
+  --bg:#0B0F14; --panel:#121821; --panel2:#0F141C; --border:#23303D;
+  --text:#E6EDF3; --muted:#8B98A5; --gold:#E8A94C; --teal:#4FD1C5;
+  --danger:#E8664C; --radius:10px; --mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+[data-theme="light"]{
+  --bg:#F5F3EE; --panel:#FFFFFF; --panel2:#EFEAE0; --border:#D8D2C4;
+  --text:#1B2430; --muted:#5B6572; --gold:#B8791F; --teal:#0F8F82;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{background:var(--bg); color:var(--text); font-family:var(--sans); line-height:1.5; transition:background .3s,color .3s;}
+::-webkit-scrollbar{width:10px;} ::-webkit-scrollbar-thumb{background:var(--border); border-radius:6px;}
+a{color:var(--teal);}
+.wrap{max-width:1180px; margin:0 auto; padding:0 24px 80px;}
+header.top{position:sticky; top:0; z-index:50; background:var(--bg); border-bottom:1px solid var(--border); padding:14px 24px;}
+.topbar{max-width:1180px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+.brand{font-family:var(--mono); letter-spacing:.06em; font-size:14px; text-transform:uppercase; color:var(--muted); display:flex; gap:10px; align-items:center;}
+.brand b{color:var(--text); font-size:16px;}
+.brand .dot{width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 8px var(--gold);}
+.toolbtns{display:flex; gap:8px;}
+.btn{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.04em; background:var(--panel); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:6px; cursor:pointer; transition:.2s;}
+.btn:hover{border-color:var(--gold); color:var(--gold);}
+.btn.active{border-color:var(--teal); color:var(--teal);}
+
+.hero{padding:56px 0 32px; border-bottom:1px dashed var(--border);}
+.eyebrow{font-family:var(--mono); font-size:12px; color:var(--gold); letter-spacing:.12em; text-transform:uppercase; margin-bottom:14px;}
+h1{font-family:var(--mono); font-size:clamp(28px,4.5vw,46px); line-height:1.1; letter-spacing:-.01em; margin-bottom:16px;}
+h1 span{color:var(--teal);}
+.sub{color:var(--muted); max-width:640px; font-size:16px; margin-bottom:26px;}
+.heroMeta{display:flex; gap:28px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; color:var(--muted);}
+.heroMeta b{color:var(--text); display:block; font-size:20px; font-family:var(--sans); font-weight:700;}
+
+svg.circuit{width:100%; height:auto; display:block; margin-top:36px;}
+.node circle{fill:var(--panel); stroke:var(--border); stroke-width:2; cursor:pointer; transition:.2s;}
+.node.done circle{fill:var(--gold); stroke:var(--gold);}
+.node:hover circle{stroke:var(--teal);}
+.node text{fill:var(--muted); font-family:var(--mono); font-size:10px; text-anchor:middle;}
+.node.done text{fill:var(--bg);}
+.pulse{fill:var(--teal); filter:drop-shadow(0 0 5px var(--teal));}
+.circuitLine{stroke:var(--border); stroke-width:2; fill:none;}
+
+.progressBar{height:6px; background:var(--panel2); border-radius:4px; overflow:hidden; margin:20px 0 4px; border:1px solid var(--border);}
+.progressFill{height:100%; background:linear-gradient(90deg,var(--gold),var(--teal)); width:0%; transition:width .4s;}
+.progressLabel{font-family:var(--mono); font-size:11px; color:var(--muted);}
+
+.section{padding:40px 0;}
+.sectionHead{display:flex; align-items:baseline; gap:12px; margin-bottom:20px;}
+.sectionHead .idx{font-family:var(--mono); color:var(--gold); font-size:13px;}
+.sectionHead h2{font-family:var(--mono); font-size:22px; letter-spacing:-.01em;}
+
+.stageNav{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:28px;}
+.stagePill{font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; border:1px solid var(--border); background:var(--panel); color:var(--muted); padding:7px 12px; border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:6px;}
+.stagePill.active{color:var(--text); border-color:var(--teal);}
+.stagePill .chk{width:14px; height:14px; border-radius:50%; border:1px solid var(--border); display:inline-block;}
+.stagePill.done .chk{background:var(--gold); border-color:var(--gold);}
+
+.stageCard{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:28px; display:none;}
+.stageCard.active{display:block; animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+.stageTop{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:6px;}
+.stageTitle{font-family:var(--mono); font-size:19px;}
+.stageActions{display:flex; gap:8px;}
+.iconbtn{background:var(--panel2); border:1px solid var(--border); color:var(--muted); width:34px; height:34px; border-radius:6px; cursor:pointer; font-size:15px;}
+.iconbtn.on{color:var(--gold); border-color:var(--gold);}
+.stageMeta{display:flex; gap:16px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; color:var(--muted); margin-bottom:22px;}
+.stageMeta span b{color:var(--teal);}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+@media(max-width:760px){.grid2{grid-template-columns:1fr;}}
+.block{margin-bottom:22px;}
+.block h4{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); margin-bottom:10px;}
+.block ul{padding-left:18px;}
+.block li{margin-bottom:6px; font-size:14.5px;}
+.tools{display:flex; flex-direction:column; gap:10px;}
+.toolCard{border:1px solid var(--border); border-radius:8px; padding:12px 14px; background:var(--panel2);}
+.toolCard .name{font-weight:700; font-size:14.5px; display:flex; justify-content:space-between;}
+.toolCard .why{color:var(--muted); font-size:13px; margin-top:4px;}
+.toolCard .alt{font-size:12px; color:var(--teal); margin-top:6px; font-family:var(--mono);}
+.promptBox{background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:var(--mono); font-size:12.5px; color:var(--teal); white-space:pre-wrap; position:relative;}
+.copyBtn{position:absolute; top:8px; right:8px; font-family:var(--mono); font-size:10px; background:var(--panel); border:1px solid var(--border); color:var(--muted); padding:3px 8px; border-radius:4px; cursor:pointer;}
+.mistake{color:var(--danger);}
+textarea.notes{width:100%; min-height:90px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--sans); font-size:13.5px; padding:10px; resize:vertical;}
+
+.decisionTree{border:1px solid var(--border); background:var(--panel2); border-radius:8px; padding:18px;}
+.dNode{margin-bottom:8px;}
+.dQ{font-family:var(--mono); font-size:13px; color:var(--text); margin-bottom:8px; font-weight:600;}
+.dOpts{display:flex; gap:8px; flex-wrap:wrap;}
+.dOpts button{font-size:12.5px; padding:7px 12px; border-radius:6px; border:1px solid var(--border); background:var(--panel); color:var(--text); cursor:pointer;}
+.dOpts button:hover{border-color:var(--teal);}
+.dResult{margin-top:12px; padding:12px; border-left:3px solid var(--gold); background:var(--panel); font-size:13.5px; display:none;}
+.dResult.show{display:block;}
+
+.compareTable{width:100%; border-collapse:collapse; font-size:13.5px;}
+.compareTable th,.compareTable td{border:1px solid var(--border); padding:9px 11px; text-align:left;}
+.compareTable th{font-family:var(--mono); color:var(--gold); font-size:11px; text-transform:uppercase; background:var(--panel2);}
+
+.finalGrid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+@media(max-width:760px){.finalGrid{grid-template-columns:1fr;}}
+.finalCard{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:22px;}
+.finalCard h3{font-family:var(--mono); font-size:14px; color:var(--gold); text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;}
+.tagRow{display:flex; flex-wrap:wrap; gap:8px;}
+.tag{font-family:var(--mono); font-size:12px; background:var(--panel2); border:1px solid var(--border); padding:5px 10px; border-radius:14px; color:var(--teal);}
+
+footer.foot{border-top:1px solid var(--border); padding:26px 0; text-align:center; color:var(--muted); font-family:var(--mono); font-size:12px;}
+
+@media print{
+  header.top,.toolbtns,.stageNav,.iconbtn,.copyBtn,.progressBar,svg.circuit,footer.foot{display:none!important;}
+  body{background:#fff; color:#000;}
+  .stageCard{display:block!important; page-break-after:always; border:none;}
+  .toolCard,.promptBox,.decisionTree,.finalCard{border:1px solid #999;}
+}
+</style>
+</head>
+<body data-theme="dark">
+<header class="top">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span><b>AI Workflow Architect</b> / portfolio-project.build</div>
+    <div class="toolbtns">
+      <button class="btn" id="themeBtn">☾ Theme</button>
+      <button class="btn" id="printBtn">⎙ Print</button>
+      <button class="btn" id="resetBtn">↺ Reset</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow">Software Development → AI Product Development → Browser-Based AI Apps</div>
+    <h1>End-to-End <span>AI Portfolio Project</span> Workflow</h1>
+    <p class="sub">A complete, stage-by-stage build plan for shipping a browser-based AI application worth putting on your portfolio — from first idea to public launch, with the exact tools, prompts, and pitfalls at every step.</p>
+    <div class="heroMeta">
+      <div><b>8</b>Stages</div>
+      <div><b id="hmTools">—</b>AI Tools Mapped</div>
+      <div><b id="hmTime">—</b>Est. Total Time</div>
+      <div><b id="hmProgress">0%</b>Your Progress</div>
+    </div>
+    <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
+    <div class="progressLabel" id="progressLabel">0 of 8 stages complete</div>
+    <svg class="circuit" viewBox="0 0 1100 120" id="circuitSvg"></svg>
+  </section>
+
+  <section class="section">
+    <div class="sectionHead"><span class="idx">◆</span><h2>Workflow Stages</h2></div>
+    <div class="stageNav" id="stageNav"></div>
+    <div id="stageCards"></div>
+  </section>
+
+  <section class="section">
+    <div class="sectionHead"><span class="idx">◆</span><h2>Decision Tree — Pick Your Stack Fast</h2></div>
+    <div class="decisionTree" id="decisionTree"></div>
+  </section>
+
+  <section class="section">
+    <div class="sectionHead"><span class="idx">◆</span><h2>Framework Comparison</h2></div>
+    <table class="compareTable">
+      <tr><th>Option</th><th>Best For</th><th>AI Integration Ease</th><th>Hosting</th><th>Learning Curve</th></tr>
+      <tr><td>Vanilla JS + Vite</td><td>Lightweight, fast, portfolio-friendly</td><td>Direct fetch to API</td><td>Vercel / Netlify</td><td>Low</td></tr>
+      <tr><td>React + Vite</td><td>Component-heavy interactive UI</td><td>Easy via hooks + SDK</td><td>Vercel</td><td>Medium</td></tr>
+      <tr><td>Next.js</td><td>Full-stack, SSR, hidden API keys</td><td>Native API routes for AI calls</td><td>Vercel</td><td>Medium-High</td></tr>
+      <tr><td>Svelte/SvelteKit</td><td>Small bundle, snappy demos</td><td>Straightforward fetch</td><td>Vercel / Netlify</td><td>Medium</td></tr>
+    </table>
+  </section>
+
+  <section class="section">
+    <div class="sectionHead"><span class="idx">◆</span><h2>Workflow Summary & Stack</h2></div>
+    <div class="finalGrid">
+      <div class="finalCard">
+        <h3>Workflow Summary</h3>
+        <p style="font-size:14.5px; color:var(--muted);">This workflow takes a browser-based AI application from a scoped idea to a deployed, demo-ready portfolio piece across 8 stages: ideation, architecture, UI/UX, environment setup, core AI integration, testing, deployment, and presentation. Each stage is designed to be completed independently and checked off as you go.</p>
+      </div>
+      <div class="finalCard">
+        <h3>Recommended AI Stack</h3>
+        <div class="tagRow">
+          <span class="tag">Claude (build + code)</span><span class="tag">Claude Code</span><span class="tag">v0 / Claude Design</span>
+          <span class="tag">Anthropic API</span><span class="tag">Figma</span><span class="tag">GitHub Copilot</span><span class="tag">Vercel</span>
+        </div>
+      </div>
+      <div class="finalCard">
+        <h3>Learning Resources</h3>
+        <ul style="padding-left:18px; font-size:14px;">
+          <li>docs.claude.com — API & prompting guides</li>
+          <li>web.dev — modern frontend fundamentals</li>
+          <li>Frontend Masters — JS/React deep dives</li>
+          <li>Vercel docs — deployment & serverless functions</li>
+        </ul>
+      </div>
+      <div class="finalCard">
+        <h3>Communities</h3>
+        <div class="tagRow">
+          <span class="tag">r/webdev</span><span class="tag">r/ClaudeAI</span><span class="tag">Indie Hackers</span><span class="tag">Dev.to</span><span class="tag">Discord: Anthropic Devs</span>
+        </div>
+      </div>
+      <div class="finalCard">
+        <h3>Search Keywords</h3>
+        <div class="tagRow">
+          <span class="tag">"AI portfolio project ideas"</span><span class="tag">"Claude API tutorial"</span><span class="tag">"browser AI app deploy"</span><span class="tag">"frontend AI SaaS demo"</span>
+        </div>
+      </div>
+      <div class="finalCard">
+        <h3>Additional AI Prompts</h3>
+        <div class="promptBox">"Review my portfolio project idea for originality and technical scope. Suggest 3 differentiators an employer would notice."<button class="copyBtn" onclick="copyText(this)">Copy</button></div>
+      </div>
+      <div class="finalCard" style="grid-column:1/-1;">
+        <h3>Future Automation Opportunities</h3>
+        <ul style="padding-left:18px; font-size:14.5px;">
+          <li>Auto-generate README and case-study copy from your commit history once the project is deployed.</li>
+          <li>Set up a CI pipeline that runs AI-assisted code review comments on every pull request.</li>
+          <li>Use an AI agent to monitor your deployed app's usage analytics and draft a monthly portfolio update post.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="foot">AI WORKFLOW ARCHITECT — your progress, notes and bookmarks are saved locally in this browser.</footer>
+
+<script>
+const STAGES = [
+{
+  id:"ideation", title:"Ideation & Scoping", time:"2–4 hrs",
+  objectives:["Land on one specific AI app idea a hiring manager would remember.","Define the user, the problem, and the single core feature."],
+  tasks:["Brainstorm 10 AI app concepts across categories you enjoy.","Score each against effort, originality, and portfolio impact.","Write a one-paragraph problem statement and target user.","Define the single 'hero' feature the demo must nail."],
+  tools:[
+    {name:"Claude", why:"Strong at structured brainstorming and ruthlessly cutting weak ideas down to one scoped concept.", alt:"ChatGPT, Gemini"},
+    {name:"Perplexity", why:"Fast competitive research to confirm the idea isn't oversaturated.", alt:"Google, Exploding Topics"}
+  ],
+  prompts:["List 10 browser-based AI app ideas for a portfolio, each solving one narrow real problem. Rank by build time under 2 weeks and visual demo-ability."],
+  practices:["Pick a problem you personally have, not a generic 'AI writes emails' idea.","Constrain scope to one hero feature — resist adding 5 features."],
+  mistakes:["Choosing an idea too broad to finish in the available time.","Copying a well-known SaaS 1:1 with no unique angle."],
+  outputs:["A one-page project brief: problem, user, hero feature, success metric."],
+  efficiency:["Timebox brainstorming to 45 minutes — more time rarely improves idea quality."]
+},
+{
+  id:"architecture", title:"Planning & Architecture", time:"3–5 hrs",
+  objectives:["Choose the stack and map data flow between UI, AI API, and any backend.","Define what runs client-side vs server-side."],
+  tasks:["Sketch the architecture: frontend, API layer, AI provider, storage.","Decide where the API key lives (never client-side).","List required screens/states: empty, loading, success, error.","Draft a rough project timeline with milestones."],
+  tools:[
+    {name:"Claude Code", why:"Can scaffold a project structure and explain trade-offs interactively.", alt:"Cursor, GitHub Copilot"},
+    {name:"Excalidraw", why:"Quick freehand architecture diagrams without setup overhead.", alt:"Whimsical, Figma"}
+  ],
+  prompts:["Given this app idea, propose a lightweight architecture using Next.js API routes to keep my Anthropic API key server-side. List the main files needed."],
+  practices:["Keep the backend as thin as possible — one API route calling the model is often enough.","Design for the error and empty states from day one, not as an afterthought."],
+  mistakes:["Exposing API keys in client-side JavaScript.","Over-engineering with a database before you've validated the core feature."],
+  outputs:["Architecture diagram, file/folder plan, and a milestone timeline."],
+  efficiency:["Reuse a known-good starter template instead of configuring tooling from scratch."]
+},
+{
+  id:"design", title:"UI/UX Design", time:"4–6 hrs",
+  objectives:["Design an interface distinct enough to stand out in a portfolio review.","Map the full user journey for the hero feature."],
+  tasks:["Define a visual direction: palette, type, layout personality.","Wireframe the core screen and its loading/empty/error states.","Design the primary interaction (e.g. prompt input, result display).","Build a simple component/style reference sheet."],
+  tools:[
+    {name:"Claude Design", why:"Generates cohesive, on-brief UI concepts directly from a written brief, fast to iterate on.", alt:"v0 by Vercel, Figma"},
+    {name:"Figma", why:"Industry-standard for precise, presentable mockups employers recognize.", alt:"Penpot"}
+  ],
+  prompts:["Design a clean, distinctive single-screen UI for an AI-powered [tool type]. Include the input area, a loading state, and a results panel. Avoid generic dashboard clichés."],
+  practices:["Design the loading and error states with the same care as the happy path.","Pick one deliberate visual signature rather than many small flourishes."],
+  mistakes:["Using a generic dark-mode dashboard template that looks like every other AI demo.","Skipping mobile/responsive layout entirely."],
+  outputs:["Wireframes or mockups for all core states, plus a mini style guide."],
+  efficiency:["Design directly in code for simple apps — skip a separate mockup tool if the UI is simple."]
+},
+{
+  id:"setup", title:"Environment Setup", time:"1–2 hrs",
+  objectives:["Get a working local dev environment with the chosen framework and AI SDK.","Confirm the AI API call works end-to-end before building UI."],
+  tasks:["Scaffold the project (Vite/Next.js) and install dependencies.","Set up environment variables for the API key.","Write a minimal test call to the Anthropic API and log the response.","Initialize git and push an empty repo."],
+  tools:[
+    {name:"Claude Code", why:"Scaffolds boilerplate, writes the first working API call, and explains each config file.", alt:"GitHub Copilot, Cursor"},
+    {name:"Vite", why:"Near-instant dev server and build times for frontend-heavy portfolio apps.", alt:"Next.js, Parcel"}
+  ],
+  prompts:["Set up a Next.js project with an API route that calls the Anthropic Messages API using an environment variable for the key. Show me the exact files to create."],
+  practices:["Test the raw API call in isolation before wiring it to any UI.","Commit early and often, even before the UI exists."],
+  mistakes:["Building the whole UI before confirming the API call actually works.","Committing the .env file with real keys to git."],
+  outputs:["A running local project with a verified AI API call and an initialized git repo."],
+  efficiency:["Use a project template you've used before to skip repetitive config."]
+},
+{
+  id:"development", title:"Core Development", time:"10–20 hrs",
+  objectives:["Build the hero feature end-to-end with real AI responses.","Implement all planned states: loading, success, empty, error."],
+  tasks:["Build the input UI and connect it to the API route.","Handle streaming or async responses gracefully.","Implement error handling and rate-limit messaging.","Add small delight details: animations, keyboard shortcuts, copy buttons."],
+  tools:[
+    {name:"Claude Code", why:"Handles multi-file implementation, refactors, and debugging in one continuous session.", alt:"Cursor, Windsurf"},
+    {name:"Anthropic API", why:"Reliable model access with streaming support for responsive UIs.", alt:"OpenAI API, Gemini API"}
+  ],
+  prompts:["Implement a React component that streams a Claude API response token-by-token into a results panel, with a loading skeleton and error banner."],
+  practices:["Build one thin vertical slice (input → API → output) before polishing.","Handle the AI's failure modes explicitly: timeouts, empty output, refusals."],
+  mistakes:["Assuming the AI response is always well-formed JSON without validation.","Ignoring loading/error UX until the very end."],
+  outputs:["A fully working core feature deployed locally, with all states handled."],
+  efficiency:["Ask the AI coding tool to write tests alongside features, not after."]
+},
+{
+  id:"testing", title:"Testing & Debugging", time:"3–5 hrs",
+  objectives:["Confirm the app behaves correctly across inputs, devices, and failure conditions.","Fix visual and functional bugs before deployment."],
+  tasks:["Test with edge-case inputs: empty, very long, adversarial prompts.","Check responsiveness on mobile and tablet breakpoints.","Verify error states trigger correctly (network failure, bad key, rate limit).","Run a basic accessibility pass: focus states, contrast, alt text."],
+  tools:[
+    {name:"Claude Code", why:"Can write and run test cases, and reason about likely edge cases you'd miss.", alt:"Playwright, Cypress"},
+    {name:"Lighthouse (Chrome DevTools)", why:"Free, built-in audit for performance, accessibility, and SEO basics.", alt:"axe DevTools"}
+  ],
+  prompts:["List 10 edge-case inputs that could break this AI app's input handling, and write test cases for each."],
+  practices:["Test on a real mobile device, not just a resized browser window.","Fix accessibility basics — they're often quick wins reviewers notice."],
+  mistakes:["Only testing the 'happy path' with perfect inputs.","Ignoring console errors that don't visibly break the UI."],
+  outputs:["A short test log of edge cases checked and bugs fixed."],
+  efficiency:["Batch similar bug fixes together instead of context-switching between unrelated issues."]
+},
+{
+  id:"deployment", title:"Deployment", time:"1–3 hrs",
+  objectives:["Ship the app to a public URL that's fast and reliable.","Secure the API key and set sane usage limits."],
+  tasks:["Connect the repo to a hosting provider and configure env variables.","Set up a custom domain or clean subdomain if possible.","Add basic rate-limiting or usage caps to control API costs.","Verify the production build works identically to local."],
+  tools:[
+    {name:"Vercel", why:"Zero-config deploys for Next.js/Vite projects with built-in serverless functions.", alt:"Netlify, Cloudflare Pages"},
+    {name:"Claude Code", why:"Can debug production-only issues like env var mismatches or build errors.", alt:"GitHub Copilot"}
+  ],
+  prompts:["My Next.js app works locally but the API route fails in production on Vercel. Here's the error log — help me debug it."],
+  practices:["Set a hard cap or budget alert on your AI API usage before going public.","Re-test the deployed URL on mobile immediately after launch."],
+  mistakes:["Forgetting to add environment variables in the hosting dashboard.","Leaving API usage uncapped, risking a surprise bill if the demo goes viral."],
+  outputs:["A live, public URL with working AI functionality and capped usage."],
+  efficiency:["Use the host's preview deployments to test changes before promoting to production."]
+},
+{
+  id:"presentation", title:"Portfolio Presentation & Promotion", time:"3–4 hrs",
+  objectives:["Package the project so it's instantly understandable to a recruiter in under a minute.","Share it in the right places to get real feedback and visibility."],
+  tasks:["Write a concise README: problem, solution, stack, live link, screenshots.","Record a 30–60 second demo video or GIF of the hero feature.","Add the project to your portfolio site with a short case-study writeup.","Share in 2–3 relevant communities for feedback."],
+  tools:[
+    {name:"Claude", why:"Turns rough notes into a tight, recruiter-friendly case study and README.", alt:"Notion AI, ChatGPT"},
+    {name:"Loom / ScreenStudio", why:"Fast, low-friction screen recording for a polished demo clip.", alt:"OBS Studio"}
+  ],
+  prompts:["Turn these rough project notes into a concise portfolio case study: problem, approach, stack, challenges, outcome. Keep it under 200 words."],
+  practices:["Lead with the live demo link and a visual, not a wall of text.","Name the specific technical challenge you solved, not just the tech list."],
+  mistakes:["Burying the live link below paragraphs of setup instructions.","Writing a generic 'built with React and AI' description with no specifics."],
+  outputs:["A polished README, a short demo clip, and a published case study."],
+  efficiency:["Reuse the same case-study template for future projects to save writing time."]
+}
+];
+
+const state = JSON.parse(localStorage.getItem('awa_state')||'{}');
+state.done = state.done || {};
+state.bookmarks = state.bookmarks || {};
+state.notes = state.notes || {};
+state.active = state.active || STAGES[0].id;
+function save(){ localStorage.setItem('awa_state', JSON.stringify(state)); }
+
+document.getElementById('hmTools').textContent = STAGES.reduce((a,s)=>a+s.tools.length,0);
+document.getElementById('hmTime').textContent = "24–48 hrs";
+
+function copyText(btn){
+  const box = btn.parentElement;
+  const txt = box.textContent.replace('Copy','').trim();
+  navigator.clipboard.writeText(txt);
+  btn.textContent='Copied'; setTimeout(()=>btn.textContent='Copy',1200);
+}
+
+function renderNav(){
+  const nav = document.getElementById('stageNav');
+  nav.innerHTML = STAGES.map(s=>`
+    <div class="stagePill ${state.active===s.id?'active':''} ${state.done[s.id]?'done':''}" data-id="${s.id}">
+      <span class="chk"></span>${s.title}
+    </div>`).join('');
+  nav.querySelectorAll('.stagePill').forEach(el=>el.addEventListener('click',()=>{
+    state.active = el.dataset.id; save(); renderNav(); renderCards(); renderCircuit();
+    document.getElementById('stageCards').scrollIntoView({behavior:'smooth', block:'start'});
+  }));
+}
+
+function renderCards(){
+  const wrap = document.getElementById('stageCards');
+  wrap.innerHTML = STAGES.map((s,i)=>`
+    <div class="stageCard ${state.active===s.id?'active':''}" id="card-${s.id}">
+      <div class="stageTop">
+        <div class="stageTitle">${String(i+1).padStart(2,'0')} · ${s.title}</div>
+        <div class="stageActions">
+          <button class="iconbtn ${state.bookmarks[s.id]?'on':''}" data-act="bookmark" data-id="${s.id}" title="Bookmark">★</button>
+          <button class="iconbtn ${state.done[s.id]?'on':''}" data-act="done" data-id="${s.id}" title="Mark complete">✓</button>
+        </div>
+      </div>
+      <div class="stageMeta"><span>Time: <b>${s.time}</b></span><span>Tools: <b>${s.tools.length}</b></span><span>Stage ${i+1} of ${STAGES.length}</span></div>
+      <div class="grid2">
+        <div>
+          <div class="block"><h4>Objectives</h4><ul>${s.objectives.map(o=>`<li>${o}</li>`).join('')}</ul></div>
+          <div class="block"><h4>Tasks</h4><ul>${s.tasks.map(t=>`<li>${t}</li>`).join('')}</ul></div>
+          <div class="block"><h4>Best Practices</h4><ul>${s.practices.map(p=>`<li>${p}</li>`).join('')}</ul></div>
+          <div class="block"><h4>Common Mistakes</h4><ul>${s.mistakes.map(m=>`<li class="mistake">${m}</li>`).join('')}</ul></div>
+        </div>
+        <div>
+          <div class="block"><h4>Best AI Tools</h4><div class="tools">${s.tools.map(t=>`
+            <div class="toolCard"><div class="name">${t.name}</div><div class="why">${t.why}</div><div class="alt">Alt: ${t.alt}</div></div>`).join('')}</div></div>
+          <div class="block"><h4>Prompt Example</h4>${s.prompts.map(p=>`<div class="promptBox">${p}<button class="copyBtn" onclick="copyText(this)">Copy</button></div>`).join('')}</div>
+          <div class="block"><h4>Expected Outputs</h4><ul>${s.outputs.map(o=>`<li>${o}</li>`).join('')}</ul></div>
+          <div class="block"><h4>Efficiency Tips</h4><ul>${s.efficiency.map(e=>`<li>${e}</li>`).join('')}</ul></div>
+        </div>
+      </div>
+      <div class="block"><h4>Notes</h4><textarea class="notes" data-id="${s.id}" placeholder="Jot down decisions, blockers, or ideas for this stage...">${state.notes[s.id]||''}</textarea></div>
+    </div>`).join('');
+
+  wrap.querySelectorAll('[data-act="bookmark"]').forEach(b=>b.addEventListener('click',()=>{
+    state.bookmarks[b.dataset.id]=!state.bookmarks[b.dataset.id]; save(); renderCards();
+  }));
+  wrap.querySelectorAll('[data-act="done"]').forEach(b=>b.addEventListener('click',()=>{
+    state.done[b.dataset.id]=!state.done[b.dataset.id]; save(); renderNav(); renderCards(); renderCircuit(); renderProgress();
+  }));
+  wrap.querySelectorAll('textarea.notes').forEach(t=>t.addEventListener('input',()=>{
+    state.notes[t.dataset.id]=t.value; save();
+  }));
+}
+
+function renderProgress(){
+  const total = STAGES.length;
+  const done = STAGES.filter(s=>state.done[s.id]).length;
+  const pct = Math.round((done/total)*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressLabel').textContent = `${done} of ${total} stages complete`;
+  document.getElementById('hmProgress').textContent = pct+'%';
+}
+
+function renderCircuit(){
+  const svg = document.getElementById('circuitSvg');
+  const n = STAGES.length; const w=1100, y=60, pad=60;
+  const step=(w-pad*2)/(n-1);
+  let path=`M${pad} ${y}`;
+  for(let i=1;i<n;i++) path+=` L${pad+step*i} ${y}`;
+  const doneCount = STAGES.filter(s=>state.done[s.id]).length;
+  const pulseX = pad + step*Math.min(doneCount, n-1);
+  let html = `<path class="circuitLine" d="${path}"></path>`;
+  STAGES.forEach((s,i)=>{
+    const x = pad+step*i;
+    html += `<g class="node ${state.done[s.id]?'done':''}" data-id="${s.id}">
+      <circle cx="${x}" cy="${y}" r="14"></circle>
+      <text x="${x}" y="${y+4}">${i+1}</text>
+      <text x="${x}" y="${y+32}" style="font-size:9px;">${s.title.split(' ')[0]}</text>
+    </g>`;
+  });
+  html += `<circle class="pulse" cx="${pulseX}" cy="${y}" r="5"></circle>`;
+  svg.innerHTML = html;
+  svg.querySelectorAll('.node').forEach(el=>el.addEventListener('click',()=>{
+    state.active = el.dataset.id; save(); renderNav(); renderCards();
+    document.getElementById('stageCards').scrollIntoView({behavior:'smooth', block:'start'});
+  }));
+}
+
+const TREE = {
+  q:"Do you need the AI API key hidden from the browser?",
+  yesLabel:"Yes, keep it server-side", noLabel:"No, client demo only / no real key exposure risk",
+  yes:{
+    q:"Do you need server-side rendering or multiple API routes?",
+    yesLabel:"Yes, multiple routes/SSR", noLabel:"No, just one simple endpoint",
+    yes:{result:"Use Next.js with API routes — best fit for hiding keys and handling multiple AI endpoints."},
+    no:{result:"Use Vite + a single serverless function (e.g. Vercel Function) — lighter than a full Next.js app."}
+  },
+  no:{result:"Vanilla JS or React + Vite works fine — but still avoid embedding real production keys; use a demo-limited key or mock responses."}
+};
+function stepHtml(node, path){
+  return `<div class="dNode"><div class="dQ">${node.q}</div>
+    <div class="dOpts">
+      <button data-path="${path}yes">${node.yesLabel}</button>
+      <button data-path="${path}no">${node.noLabel}</button>
+    </div>
+    <div class="dResult" id="res-${path}"></div>
+  </div>`;
+}
+function bindTree(){
+  document.querySelectorAll('#decisionTree .dOpts button').forEach(b=>{
+    b.onclick = ()=>{
+      const p = b.dataset.path;
+      let node = TREE;
+      for(const part of p.match(/yes|no/g)||[]) node = node[part];
+      const resEl = document.getElementById('res-'+p);
+      if(node.result){ resEl.textContent = node.result; resEl.classList.add('show'); }
+      else { resEl.outerHTML = stepHtml(node, p); bindTree(); }
+    };
+  });
+}
+function renderTree(){
+  document.getElementById('decisionTree').innerHTML = stepHtml(TREE,'');
+  bindTree();
+}
+
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  const html = document.body;
+  const cur = html.getAttribute('data-theme');
+  const next = cur==='dark'?'light':'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('themeBtn').textContent = next==='dark'?'☾ Theme':'☀ Theme';
+  localStorage.setItem('awa_theme', next);
+});
+document.getElementById('printBtn').addEventListener('click', ()=>window.print());
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Reset all progress, notes, and bookmarks?')){
+    localStorage.removeItem('awa_state'); location.reload();
+  }
+});
+
+(function init(){
+  const savedTheme = localStorage.getItem('awa_theme') || 'dark';
+  document.body.setAttribute('data-theme', savedTheme);
+  document.getElementById('themeBtn').textContent = savedTheme==='dark'?'☾ Theme':'☀ Theme';
+  renderNav(); renderCards(); renderCircuit(); renderProgress(); renderTree();
+})();
+</script>
+</body>
+</html>
