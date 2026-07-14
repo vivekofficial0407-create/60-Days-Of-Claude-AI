@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn Roast & Rebuild</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#1a1a1a;--sub:#5b5b5b;--accent:#0a66c2;--border:#e1e4e8;--good:#0a9d58;--bad:#d93025;--warn:#e8a400}
+[data-theme="dark"]{--bg:#0f1115;--card:#1b1e24;--text:#eef0f2;--sub:#a1a7b0;--accent:#4da3ff;--border:#2c313a;--good:#4fd685;--bad:#ff6b6b;--warn:#ffc857}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);transition:.2s}
+.wrap{max-width:900px;margin:0 auto;padding:20px}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 0}
+header h1{font-size:1.3rem;margin:0}
+.toggle{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:6px 14px;cursor:pointer;color:var(--text)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:18px}
+h2{margin-top:0;font-size:1.15rem}
+h3{font-size:1rem}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:.85rem}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.hidden{display:none!important}
+.score-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.score-row:last-child{border:none}
+.score-badge{font-weight:700;padding:3px 10px;border-radius:12px;font-size:.85rem;white-space:nowrap}
+.s-good{background:rgba(10,157,88,.15);color:var(--good)}
+.s-mid{background:rgba(232,164,0,.15);color:var(--warn)}
+.s-bad{background:rgba(217,48,37,.15);color:var(--bad)}
+.overall{text-align:center;padding:14px;font-size:1.4rem;font-weight:800;margin-top:10px}
+.sec{margin-bottom:20px;padding-bottom:16px;border-bottom:1px dashed var(--border)}
+.sec:last-child{border:none}
+.quote{background:var(--bg);border-left:3px solid var(--bad);padding:8px 12px;font-style:italic;margin:6px 0;font-size:.88rem;white-space:pre-wrap}
+.rewrite{background:var(--bg);border-left:3px solid var(--good);padding:10px 14px;margin:8px 0;border-radius:6px;white-space:pre-wrap;font-size:.9rem}
+.opt-label{font-weight:700;color:var(--accent);font-size:.85rem;margin-bottom:4px}
+.before-after{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+.ba-box{flex:1;min-width:220px;background:var(--bg);border-radius:8px;padding:10px}
+.ba-box b{font-size:.78rem;text-transform:uppercase;color:var(--sub)}
+.ba-box p{margin:6px 0 0;font-size:.87rem}
+.chip{display:inline-block;background:var(--bg);border:1px solid var(--border);padding:4px 10px;border-radius:14px;font-size:.82rem;margin:3px 4px 3px 0}
+.chip.add{border-color:var(--good);color:var(--good)}
+.chip.rem{border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.day{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
+.day:last-child{border:none}
+.daynum{background:var(--accent);color:#fff;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.daybody b{display:block;margin-bottom:4px}
+.check{font-size:.87rem;line-height:1.8}
+.summary-card{background:linear-gradient(135deg,var(--accent),#003a70);color:#fff;border-radius:16px;padding:26px;text-align:center}
+.summary-card .nums{display:flex;justify-content:center;gap:30px;margin:18px 0}
+.summary-card .nums div span{display:block;font-size:2rem;font-weight:800}
+.summary-card ol{text-align:left;max-width:420px;margin:14px auto;font-size:.92rem}
+.summary-card .highlight{background:rgba(255,255,255,.15);border-radius:10px;padding:12px;margin-top:14px;font-size:.9rem}
+.progress{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress div{height:100%;background:var(--accent)}
+@media(max-width:600px){.wrap{padding:12px}.before-after{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>🚀 LinkedIn Roast & Rebuild</h1>
+<button class="toggle" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">🌙/☀️</button>
+</header>
+
+<div class="tabs">
+<div class="tab active" data-t="roast" onclick="showTab('roast')">🔥 Roast</div>
+<div class="tab" data-t="rebuild" onclick="showTab('rebuild')">🛠 Rebuild</div>
+<div class="tab" data-t="scorecard" onclick="showTab('scorecard')">📊 Scorecard</div>
+<div class="tab" data-t="plan" onclick="showTab('plan')">📅 7-Day Plan</div>
+<div class="tab" data-t="summary" onclick="showTab('summary')">✅ Summary</div>
+</div>
+
+<div id="tab-roast" class="tabcontent card">
+<h2>🔥 Profile Report Card (BEFORE)</h2>
+
+<div class="sec">
+<div class="score-row"><b>Headline</b><span class="score-badge s-mid">5/10</span></div>
+<p>❌ <b>The problem:</b> Your headline reads: <span class="quote">"B.Tech CSE (Data Science) Student | AI & Frontend Projects | Open to Internship Opportunities"</span> "AI & Frontend Projects" is vague — it names two unrelated domains with zero proof, and "Open to Internship Opportunities" is a passive plea, not a positioning statement.</p>
+<p>🧠 <b>Why it hurts:</b> Recruiters searching for Data Science/AI interns scan headlines for specific tools and outcomes. "Frontend Projects" actually dilutes your Data Science positioning — it makes you look unfocused, not versatile.</p>
+<p>🔍 <b>Invisible cost:</b> You may be surfacing in generic "student" or "frontend" searches instead of the Data Science/AI/ML internship searches recruiters are actually running.</p>
+</div>
+
+<div class="sec">
+<div class="score-row"><b>About — First 2 Lines</b><span class="score-badge s-bad">2/10</span></div>
+<p>❌ <b>The problem:</b> Your opening line: <span class="quote">"I am a B.Tech CSE (Data Science) student at ABES Engineering College, Ghaziabad (affiliated with AKTU), currently entering my second year of engineering."</span> This is pure biography — a recruiter can get this from your Education section. Nothing here earns a click on "see more."</p>
+<p>🧠 <b>Why it hurts:</b> This is the only part of your About that's visible before "see more." A college name and year tells them nothing about what you can do.</p>
+<p>🔍 <b>Invisible cost:</b> Most viewers never click "see more" — so your entire About section, including your genuinely good qualities later, is never read.</p>
+</div>
+
+<div class="sec">
+<div class="score-row"><b>About — Full Section</b><span class="score-badge s-bad">3/10</span></div>
+<p>❌ <b>The problem:</b> You wrote: <span class="quote">"I have recently begun learning Java to strengthen my programming fundamentals... While I am still exploring and building my technical skill set..."</span> This actively undersells you — you're telling recruiters you're unfinished before you've shown them anything you've built. There's also zero mention of your two internships or any project.</p>
+<p>🧠 <b>Why it hurts:</b> "Still exploring," "recently begun learning" reads as self-doubt, not humility. Recruiters don't need a confession of what you don't know yet — they need evidence of what you've already done, which you have (IBM + Thiranex internships) but never mention here.</p>
+<p>🔍 <b>Invisible cost:</b> You have two real internships with concrete technical work (Power BI dashboards, K-Means clustering, a Scikit-learn prediction model) and your About section doesn't reference a single one of them. That's your strongest proof, sitting completely unused.</p>
+</div>
+
+<div class="sec">
+<div class="score-row"><b>Experience</b><span class="score-badge s-mid">5/10</span></div>
+<p>❌ <b>The problem:</b> IBM SkillsBuild bullets: <span class="quote">"Currently participating in..." / "Building AI-powered applications and exploring..." / "Working with Python, data analysis..."</span> — these describe activities, not outcomes. Thiranex bullets are stronger (<span class="quote">"Developed interactive Power BI dashboards..." / "Performed customer segmentation using K-Means clustering..." / "Built a sales prediction model using Python and Scikit-learn..."</span>) but still have zero numbers — no dataset size, no accuracy %, no dashboard adoption, no business impact.</p>
+<p>🧠 <b>Why it hurts:</b> "Participating," "exploring," and "working with" are the classic passive verbs recruiters skim past. The Thiranex bullets are closer to what strong bullets look like structurally, but without a single metric, a recruiter can't tell if your model was 60% accurate or 95% accurate — so they assume the smaller number.</p>
+<p>🔍 <b>Invisible cost:</b> You did real, technical, resume-worthy work at Thiranex — and it's currently reading as equivalent in strength to the IBM guided-learning module. That's a huge undersell of your best proof point.</p>
+</div>
+
+<div class="sec">
+<div class="score-row"><b>Skills & Keywords</b><span class="score-badge s-mid">5/10</span></div>
+<p>❌ <b>The problem:</b> You listed: <span class="quote">Python, HTML5, Java (Basics), C++ (Basics), JavaScript (Basics), Power BI (Basic), Data Analysis, Machine Learning (Fundamentals), Git & GitHub, Prompt Engineering</span> — good count (10), but 5 of these are self-labeled "(Basics)" or "(Fundamentals)," which recruiters read literally as "not proficient." HTML5/JS also point toward frontend, which competes with your Data Science identity instead of reinforcing it.</p>
+<p>🧠 <b>Why it hurts:</b> Recruiter search and LinkedIn's own algorithm treat skill tags as proficiency signals. Labeling your own skills "Basic" in the tag itself is self-sabotage — nobody else does this, and it actively lowers how seriously the skill is weighted.</p>
+<p>🔍 <b>Invisible cost:</b> You're diluting a focused Data Science/AI profile with frontend keywords, while simultaneously downgrading your Python and ML skills with qualifier labels that don't belong in a skill tag at all.</p>
+</div>
+
+<div class="overall">Overall Profile Strength: 40/100</div>
+</div>
+
+<div id="tab-rebuild" class="tabcontent card hidden">
+<h2>🛠 The Rebuild</h2>
+
+<div class="sec">
+<h3>Headline (3 options)</h3>
+<div class="opt-label">Option 1 — Keyword-Optimized (for search visibility)</div>
+<div class="rewrite">Data Science Student | Python, Machine Learning & Power BI | Seeking Data/AI Internship</div>
+<div class="opt-label">Option 2 — Value-Proposition Style (for recruiter attraction)</div>
+<div class="rewrite">I turn raw data into dashboards and models that drive decisions | Data Science Student @ ABES | Python • ML • Power BI</div>
+<div class="opt-label">Option 3 — Authority Style (for visibility as you build a following)</div>
+<div class="rewrite">Aspiring Data Scientist | Building ML models & BI dashboards one project at a time | Documenting the journey</div>
+<p style="color:var(--sub);font-size:.87rem">Since your goal is internships + recruiter attraction, lead with <b>Option 1</b> — it's built entirely from the keywords recruiters actually filter by (Data Science, Python, Machine Learning, Power BI, Internship). Use Option 2 once you have a live profile link or portfolio to point to in messages.</p>
+</div>
+
+<div class="sec">
+<h3>About Section (complete rewrite)</h3>
+<div class="rewrite">I've built a sales prediction model and customer segmentation from raw, messy data — and I want to keep doing that for a team that needs it.
+
+I'm a second-year B.Tech CSE (Data Science) student at ABES Engineering College, currently interning as an AI Virtual Intern at IBM SkillsBuild and previously as a Data Analytics Intern at Thiranex. My focus is Python, machine learning fundamentals, and turning data into decisions — not just running notebooks, but building things that answer a real business question.
+
+At Thiranex, I built interactive Power BI dashboards to analyze sales performance, ran K-Means clustering to segment customers into meaningful groups, and trained a Scikit-learn model to predict sales after cleaning and preprocessing real-world datasets. At IBM SkillsBuild, I'm applying AI and prompt engineering concepts to practical business use cases.
+
+I'm actively looking for a Data Science / AI / ML internship where I can keep building things like this. If that's you — let's talk. Message me or check out my projects below.</div>
+<p><b>Keywords embedded:</b> <span class="chip">Data Science</span><span class="chip">Python</span><span class="chip">Machine Learning</span><span class="chip">Power BI</span><span class="chip">K-Means clustering</span><span class="chip">Scikit-learn</span><span class="chip">data preprocessing</span><span class="chip">internship</span></p>
+<p style="color:var(--sub);font-size:.87rem">Strategy: the hook leads with your strongest proof point (the Thiranex model) instead of your college name, so it earns the "see more" click. The story reframes your internships as one continuous data journey instead of two disconnected lines. The proof section pulls your existing bullets into the About so recruiters see your best work even if they never open Experience. The CTA is direct and specific to your goal — internship attraction.</p>
+</div>
+
+<div class="sec">
+<h3>Experience — Rewrite (both entries, since both feed your Data Science story)</h3>
+<p style="font-weight:700;margin-bottom:4px">AI Virtual Intern — IBM SkillsBuild</p>
+<div class="before-after">
+<div class="ba-box"><b>Before</b><p>Currently participating in IBM's AI Virtual Internship, focusing on Artificial Intelligence and Machine Learning concepts.</p></div>
+<div class="ba-box"><b>After</b><p>Completing IBM's AI Virtual Internship, applying AI and Machine Learning concepts through guided, project-based modules — quantify with number of modules/certifications completed if available.</p></div>
+</div>
+<div class="before-after">
+<div class="ba-box"><b>Before</b><p>Building AI-powered applications and exploring practical implementations of prompt engineering and intelligent automation.</p></div>
+<div class="ba-box"><b>After</b><p>Built AI-powered applications applying prompt engineering and intelligent automation to practical use cases — name one specific application if you can, e.g. "a chatbot for X."</p></div>
+</div>
+<div class="before-after">
+<div class="ba-box"><b>Before</b><p>Working with Python, data analysis, and machine learning fundamentals through guided projects and learning modules.</p></div>
+<div class="ba-box"><b>After</b><p>Applied Python and machine learning fundamentals across guided projects, strengthening end-to-end model-building skills.</p></div>
+</div>
+
+<p style="font-weight:700;margin:16px 0 4px">Data Analytics Intern — Thiranex</p>
+<div class="before-after">
+<div class="ba-box"><b>Before</b><p>Developed interactive Power BI dashboards to analyze sales performance and business insights.</p></div>
+<div class="ba-box"><b>After</b><p>Developed interactive Power BI dashboards analyzing sales performance across [X regions/products] — add the number of dashboards, metrics tracked, or stakeholders who used it.</p></div>
+</div>
+<div class="before-after">
+<div class="ba-box"><b>Before</b><p>Performed customer segmentation using K-Means clustering to identify meaningful customer groups.</p></div>
+<div class="ba-box"><b>After</b><p>Segmented [X] customers into distinct groups using K-Means clustering, enabling more targeted business insights — fill in the customer count or number of clusters.</p></div>
+</div>
+<div class="before-after">
+<div class="ba-box"><b>Before</b><p>Built a sales prediction model using Python and Scikit-learn after cleaning and preprocessing real-world datasets.</p></div>
+<div class="ba-box"><b>After</b><p>Built a sales prediction model in Python/Scikit-learn achieving [X]% accuracy, after cleaning and preprocessing a [X]-row real-world dataset — add your actual accuracy score and dataset size.</p></div>
+</div>
+<p style="color:var(--sub);font-size:.87rem">Rule applied: every bullet now starts with a strong verb (Developed, Segmented, Built) instead of a passive one (Working, Currently participating). Wherever you have a real number — accuracy score, dataset size, dashboard count — add it. I haven't invented any numbers; the bracketed placeholders are exactly where your real metrics go.</p>
+</div>
+
+<div class="sec">
+<h3>Skills Recommendations</h3>
+<p><b>Add (priority order, for Data Science/AI internship search visibility):</b><br>
+<span class="chip add">+ SQL</span><span class="chip add">+ Pandas</span><span class="chip add">+ NumPy</span><span class="chip add">+ Data Visualization</span><span class="chip add">+ Exploratory Data Analysis</span><span class="chip add">+ Statistics</span><span class="chip add">+ Scikit-learn</span><span class="chip add">+ Data Preprocessing</span><span class="chip add">+ Jupyter Notebook</span><span class="chip add">+ Feature Engineering</span></p>
+<p><b>Remove or rename (the "(Basics)"/"(Fundamentals)" labels are the real problem, not the skills themselves):</b><br>
+<span class="chip rem">Java (Basics)</span><span class="chip rem">C++ (Basics)</span><span class="chip rem">JavaScript (Basics)</span><span class="chip rem">Power BI (Basic)</span><span class="chip rem">Machine Learning (Fundamentals)</span></p>
+<p style="color:var(--sub);font-size:.87rem">Keep these skills, but drop the qualifier from the tag itself — LinkedIn skill tags are binary (you have it or you don't), so "Java (Basics)" just reads as "not skilled in Java" to an ATS or recruiter filter. List it simply as "Java." Consider dropping HTML5 and JavaScript entirely from your top skills — they compete with your Data Science identity rather than reinforcing it.</p>
+<p><b>Pin to top 3:</b> <span class="chip">Python</span><span class="chip">Machine Learning</span><span class="chip">Power BI</span></p>
+</div>
+</div>
+
+<div id="tab-scorecard" class="tabcontent card hidden">
+<h2>📊 Before vs After</h2>
+<div class="score-row"><b>Headline</b><span><span class="score-badge s-mid">5/10</span> → <span class="score-badge s-good">9/10</span> <span style="color:var(--good);font-weight:700">(+4)</span></span></div>
+<div class="score-row"><b>About (Hook)</b><span><span class="score-badge s-bad">2/10</span> → <span class="score-badge s-good">9/10</span> <span style="color:var(--good);font-weight:700">(+7)</span></span></div>
+<div class="score-row"><b>About (Full)</b><span><span class="score-badge s-bad">3/10</span> → <span class="score-badge s-good">9/10</span> <span style="color:var(--good);font-weight:700">(+6)</span></span></div>
+<div class="score-row"><b>Experience</b><span><span class="score-badge s-mid">5/10</span> → <span class="score-badge s-mid">8/10</span> <span style="color:var(--good);font-weight:700">(+3)</span></span></div>
+<div class="score-row"><b>Skills/Keywords</b><span><span class="score-badge s-mid">5/10</span> → <span class="score-badge s-good">9/10</span> <span style="color:var(--good);font-weight:700">(+4)</span></span></div>
+<div class="overall">OVERALL: 40/100 → 88/100 <span style="color:var(--good)">(+48)</span></div>
+<div class="progress"><div style="width:88%"></div></div>
+<p style="color:var(--sub);font-size:.85rem;margin-top:10px">Note: Experience caps at 8/10 rather than 9-10 until you add the real numbers (accuracy %, dataset size, dashboard usage) into the bracketed placeholders above — that's the one gap only you can close.</p>
+</div>
+
+<div id="tab-plan" class="tabcontent card hidden">
+<h2>📅 7-Day LinkedIn Activation Plan</h2>
+<div class="day"><div class="daynum">1</div><div class="daybody"><b>Make All Profile Changes</b>
+<div class="check">☐ Update headline (Option 1)<br>☐ Replace About section with the rewrite<br>☐ Update both Experience entries with new bullets<br>☐ Fill in real numbers wherever you see a bracket<br>☐ Add/remove skills as recommended<br>☐ Pin Python, Machine Learning, Power BI to top 3</div></div></div>
+
+<div class="day"><div class="daynum">2</div><div class="daybody"><b>Publish Post #1 — "I just rebuilt my LinkedIn"</b>
+<div class="rewrite">I just rebuilt my entire LinkedIn profile — and it made me realize how much I was underselling myself.
+
+My old headline said "Open to Internship Opportunities." My old About said I was "still exploring." Meanwhile I'd already built a sales prediction model and customer segmentation project — and never mentioned either.
+
+If your profile reads like a confession instead of a pitch, it's probably costing you more than you think.
+
+What's one thing on your profile you've been meaning to fix but haven't yet?</div></div></div>
+
+<div class="day"><div class="daynum">3</div><div class="daybody"><b>Send 10 Strategic Connection Requests</b>
+<p>Target: Data Science/AI recruiters and talent teams at companies hiring interns, alumni from ABES/AKTU now working in Data Science/ML roles, and IBM SkillsBuild program mentors/alumni.</p>
+<div class="rewrite">Hi [Name], I'm a Data Science student building hands-on ML and BI projects (Power BI dashboards, K-Means clustering, sales prediction models). Would love to connect and learn from your experience in the field.</div></div></div>
+
+<div class="day"><div class="daynum">4</div><div class="daybody"><b>Comment on 5 Posts in Data Science/AI Space</b>
+<p>Use the Value Comment formula: <b>Agree</b> (state what you agree with in the post) + <b>Add Insight</b> (share something from your own project experience, e.g. what you learned doing K-Means clustering) + <b>Ask a Question</b> (invite a reply). This puts your name in front of the post author's audience — largely recruiters and Data Science professionals.</p></div></div>
+
+<div class="day"><div class="daynum">5</div><div class="daybody"><b>Publish Post #2 — Lessons-Learned Post</b>
+<div class="rewrite">Unpopular opinion: as a student, your LinkedIn About section shouldn't sound like an admissions essay.
+
+Here's what I learned rewriting mine:
+→ The first 2 lines are 90% of the battle (before "see more")
+→ "Still learning X" undersells you — lead with what you've already built instead
+→ Recruiters remember dashboards and models, not adjectives like "passionate" or "dedicated"
+
+What's the biggest thing you'd change about your own About section?</div></div></div>
+
+<div class="day"><div class="daynum">6</div><div class="daybody"><b>Engage + Expand</b>
+<div class="check">☐ Reply to every comment on your posts (within 1 hour if possible)<br>☐ Send 5 more connection requests to recruiters/Data Science professionals<br>☐ DM anyone who left a substantial comment on your posts</div></div></div>
+
+<div class="day"><div class="daynum">7</div><div class="daybody"><b>Review Profile Views & Adjust</b>
+<p>Check Profile Views and Search Appearances under Analytics. A rise in profile views means your new headline/keywords are working. A low connection-acceptance rate means personalize your message further (mention something specific about the recruiter's company). Low post engagement usually means your hook (first line) needs sharpening, not the whole post.</p></div></div>
+</div>
+
+<div id="tab-summary" class="tabcontent card hidden">
+<div class="summary-card">
+<h2 style="margin-top:0">I let AI roast my LinkedIn profile today. Here's what changed:</h2>
+<div class="nums"><div>BEFORE<span>40</span></div><div>AFTER<span>88</span></div></div>
+<p><b>Top 3 mistakes I was making:</b></p>
+<ol>
+<li>My About section said I was "still exploring" instead of showcasing the Power BI dashboards, K-Means clustering, and sales prediction model I'd already built</li>
+<li>My Experience bullets used passive verbs ("Working with," "Currently participating") instead of achievement verbs, and had zero numbers</li>
+<li>My Skills list literally labeled itself "(Basics)" and "(Fundamentals)" — self-sabotaging my own proficiency signal</li>
+</ol>
+<div class="highlight">🏆 The #1 thing that made the biggest difference: Rewriting my About section to lead with my Thiranex project (proof) instead of my college name (biography)</div>
+</div>
+<p style="text-align:center;color:var(--sub);margin-top:14px">📸 Screenshot this and post it on LinkedIn!</p>
+</div>
+
+</div>
+<script>
+function showTab(t){
+document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.dataset.t===t));
+document.querySelectorAll('.tabcontent').forEach(e=>e.classList.toggle('hidden', e.id!=='tab-'+t));
+}
+</script>
+</body>
+</html>
