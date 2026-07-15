@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-main:#0f0f14; --bg-card:#1a1a24; --bg-card-alt:#1e1e2e;
+    --text-primary:#f0f0f5; --text-secondary:#8888a0;
+    --accent-green:#34d399; --accent-red:#f87171; --accent-blue:#60a5fa;
+    --accent-gold:#fbbf24; --accent-purple:#a78bfa; --border-subtle:rgba(255,255,255,0.06);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg-main); color:var(--text-primary);
+    font-family:'Inter','Segoe UI',system-ui,sans-serif; padding:24px 16px 60px;
+  }
+  .wrap{max-width:720px; margin:0 auto;}
+  header{text-align:center; padding:20px 0 24px;}
+  header h1{font-size:28px; font-weight:800; margin:0 0 6px;}
+  header .sub{font-size:16px; color:var(--text-secondary); margin:0 0 4px;}
+  header .date{font-size:12px; color:var(--text-secondary);}
+  .grad-line{height:3px; border-radius:2px; margin:18px 0 8px;
+    background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple),var(--accent-gold));}
+  .card{
+    background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:16px;
+    padding:28px; margin-bottom:28px; box-shadow:0 4px 24px rgba(0,0,0,0.3);
+    border-left:4px solid var(--accent-blue); transition:transform .2s ease;
+  }
+  .card:hover{transform:translateY(-2px);}
+  .card h2{font-size:20px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin:0 0 16px;}
+  .card p{font-size:15px; line-height:1.7; margin:0 0 10px; color:var(--text-primary);}
+  .label{font-size:12px; font-weight:500; text-transform:uppercase; color:var(--text-secondary); letter-spacing:.5px;}
+
+  .c-blue{border-left-color:var(--accent-blue);} .c-blue h2{color:var(--accent-blue);}
+  .c-green{border-left-color:var(--accent-green);} .c-green h2{color:var(--accent-green);}
+  .c-purple{border-left-color:var(--accent-purple);} .c-purple h2{color:var(--accent-purple);}
+  .c-red{border-left-color:var(--accent-red);} .c-red h2{color:var(--accent-red);}
+  .c-gold{border-left-color:var(--accent-gold);} .c-gold h2{color:var(--accent-gold);}
+
+  .option-card{background:var(--bg-card-alt); border-radius:12px; padding:18px; margin-bottom:16px; border:1px solid var(--border-subtle);}
+  .option-card h3{margin:0 0 10px; font-size:17px; font-weight:700;}
+  .option-card .tag{display:inline-block; font-size:12px; color:var(--accent-gold); margin-top:6px;}
+
+  ul.simple{margin:0 0 12px; padding-left:20px;}
+  ul.simple li{font-size:15px; line-height:1.7; margin-bottom:6px;}
+
+  /* Matrix */
+  .matrix-row{display:flex; align-items:center; margin-bottom:12px; gap:10px;}
+  .matrix-label{width:40%; font-size:13px; color:var(--text-secondary); font-weight:500;}
+  .matrix-bars{width:60%; display:flex; flex-direction:column; gap:6px;}
+  .bar-container{height:28px; background:rgba(255,255,255,0.05); border-radius:8px; position:relative; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end;
+    padding-right:8px; color:#fff; font-weight:700; font-size:13px; width:0;
+    animation:grow 0.8s ease-out forwards;}
+  @keyframes grow{ to { width: var(--target); } }
+  .bar-a{background:linear-gradient(90deg,#60a5fa,#3b82f6);}
+  .bar-b{background:linear-gradient(90deg,#34d399,#10b981);}
+  .bar-c{background:linear-gradient(90deg,#a78bfa,#8b5cf6);}
+  .legend{display:flex; gap:18px; margin-bottom:18px; flex-wrap:wrap; font-size:13px;}
+  .legend span{display:flex; align-items:center; gap:6px;}
+  .dot{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .total-row{margin-top:14px; padding:14px; border-radius:10px; background:rgba(255,255,255,0.04);
+    font-weight:700; font-size:15px; display:flex; justify-content:space-between;}
+  .winner-glow{background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3);}
+
+  /* Verdict */
+  .verdict-card{background:var(--bg-card-alt); border-left:4px solid var(--accent-gold); padding:32px;
+    box-shadow:0 0 20px rgba(251,191,36,0.15);}
+  .verdict-name{font-size:30px; font-weight:800; color:var(--accent-gold); margin:6px 0 14px;}
+  .hard-truth{font-style:italic; color:var(--text-secondary); margin-top:14px;}
+
+  /* Timeline */
+  .day-row{display:flex; gap:12px; margin-bottom:10px; font-size:14px; line-height:1.6;}
+  .day-tag{min-width:78px; font-weight:700; color:var(--accent-green);}
+
+  /* Shareable */
+  .share-wrap{display:flex; gap:16px; flex-wrap:wrap;}
+  .mini-card{flex:1 1 200px; background:var(--bg-card-alt); border-radius:12px; padding:16px;
+    border:1px solid var(--border-subtle); display:flex; flex-direction:column; justify-content:space-between; min-height:160px;}
+  .mini-card h4{margin:0 0 10px; font-size:14px; color:var(--accent-gold); text-transform:uppercase; letter-spacing:.5px;}
+  .mini-card p{font-size:13px; line-height:1.5; margin:0;}
+  .watermark{font-size:10px; color:var(--text-secondary); margin-top:12px; opacity:.7;}
+
+  footer{text-align:center; color:var(--text-secondary); font-size:12px; margin-top:40px;}
+
+  @media(max-width:600px){
+    .card{padding:16px;}
+    .matrix-row{flex-direction:column; align-items:flex-start;}
+    .matrix-label, .matrix-bars{width:100%;}
+    .share-wrap{flex-direction:column;}
+    header h1{font-size:24px;}
+    .verdict-name{font-size:26px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>DECISION REPORT</h1>
+    <p class="sub">Which career path to focus on for the next 2–3 years: Data Science vs. AI/ML Engineering vs. Full-Stack Development</p>
+    <p class="date">Generated July 15, 2026</p>
+    <div class="grad-line"></div>
+  </header>
+
+  <section class="card c-blue">
+    <h2>The Real Decision</h2>
+    <p>This isn't really "which field pays more" — it's whether to trust your genuine interest and existing momentum in AI/ML, or hedge against FOMO by chasing broader job-market safety.</p>
+    <p>The trade-off: depth in one domain (interview-ready, portfolio-strong) vs. spreading thin across three to avoid "choosing wrong."</p>
+    <p>It's emotionally hard because the fear isn't about the work — it's about wasting 2–3 irreplaceable years on the wrong bet.</p>
+  </section>
+
+  <section class="card c-green">
+    <h2>The Case For Each Option</h2>
+
+    <div class="option-card">
+      <h3 style="color:var(--accent-blue)">Option A — Data Science</h3>
+      <p><span class="label">Strongest case:</span> High demand across industries, strong analytical foundation that transfers well to many roles.</p>
+      <p><span class="label">Hidden upside:</span> DS roles often serve as a stepping stone into ML roles later, since the stats/foundations overlap.</p>
+      <p><span class="label">Biggest weakness:</span> You didn't mention genuine interest here — it's a "safe demand" pick, not a "pull" pick.</p>
+      <p class="tag">Best if you value: broad demand and analytical variety over building intelligent systems.</p>
+    </div>
+
+    <div class="option-card">
+      <h3 style="color:var(--accent-green)">Option B — AI / ML Engineering</h3>
+      <p><span class="label">Strongest case:</span> You're already building AI-powered projects and genuinely enjoy the work — momentum plus interest is rare and valuable.</p>
+      <p><span class="label">Hidden upside:</span> Building real AI projects now compounds into a differentiated portfolio + YouTube content flywheel — few peers will have both.</p>
+      <p><span class="label">Biggest weakness:</span> Narrower entry-level hiring pool than full-stack; interviews tend to be more technically demanding.</p>
+      <p class="tag">Best if you value: long-term alignment, deep technical mastery, and building a distinct personal brand.</p>
+    </div>
+
+    <div class="option-card">
+      <h3 style="color:var(--accent-purple)">Option C — Full-Stack Development</h3>
+      <p><span class="label">Strongest case:</span> More job openings, generally faster and more predictable path to a first internship/placement.</p>
+      <p><span class="label">Hidden upside:</span> Full-stack skills make you self-sufficient to ship your own AI products end-to-end later.</p>
+      <p><span class="label">Biggest weakness:</span> Least aligned with your stated interest and current project direction — you'd be learning it mostly for "safety," not pull.</p>
+      <p class="tag">Best if you value: job-market breadth and speed-to-placement over specialization.</p>
+    </div>
+  </section>
+
+  <section class="card c-purple">
+    <h2>Assumption Buster</h2>
+    <p class="label">3 assumptions you may be making:</p>
+    <ul class="simple">
+      <li>That "more job openings" (Full-Stack) automatically means better odds for you specifically, regardless of fit or interest.</li>
+      <li>That choosing AI/ML means closing the door on Data Science or Full-Stack entirely, rather than them being adjacent skill sets.</li>
+      <li>That the "right" choice is knowable in advance, rather than something proven through 2 weeks of focused testing.</li>
+    </ul>
+    <p class="label">2 biases at play:</p>
+    <ul class="simple">
+      <li><strong>FOMO / status quo bias:</strong> weighing "what everyone else might be doing" over your own already-validated interest and traction.</li>
+      <li><strong>Loss aversion:</strong> the fear of "wasting time" is looming larger than the upside of committing to what you already enjoy and have started.</li>
+    </ul>
+    <p class="label">1 thing you're definitely ignoring:</p>
+    <p>You already have a head start in AI/ML (existing projects) — switching away from that discards real accumulated progress, not just a preference.</p>
+  </section>
+
+  <section class="card c-blue">
+    <h2>Decision Matrix</h2>
+    <div class="legend">
+      <span><span class="dot" style="background:#3b82f6"></span>Data Science</span>
+      <span><span class="dot" style="background:#10b981"></span>AI/ML Engineering</span>
+      <span><span class="dot" style="background:#8b5cf6"></span>Full-Stack Dev</span>
+    </div>
+
+    <div id="matrix"></div>
+
+    <div class="total-row winner-glow">
+      <span>Total (AI/ML Engineering)</span><span>52 / 70</span>
+    </div>
+  </section>
+
+  <section class="card c-red">
+    <h2>Premortem — 12 Months From Now, It Failed</h2>
+    <p><strong>If AI/ML was the choice:</strong></p>
+    <ul class="simple">
+      <li>The math/technical depth required outpaced your available time given college + clubs + YouTube.</li>
+      <li>Entry-level ML roles required more research/publication signal than you built in time.</li>
+      <li>You burned out trying to do projects + YouTube + coursework simultaneously without a clear weekly structure.</li>
+    </ul>
+    <p><span class="label">Early warning sign:</span> Struggling to finish even one project a month, or feeling behind in every club/YouTube commitment simultaneously.</p>
+    <p><span class="label">Prevention:</span> Set a fixed weekly time budget per commitment now, before momentum decides it for you.</p>
+
+    <p style="margin-top:18px;"><strong>If Data Science was the choice:</strong></p>
+    <ul class="simple">
+      <li>Motivation dropped without genuine interest driving the work.</li>
+      <li>Portfolio projects felt generic compared to peers with sharper focus.</li>
+      <li>You realized 6 months in that you actually wanted to be building AI systems, not analyzing data.</li>
+    </ul>
+    <p><span class="label">Early warning sign:</span> Doing the bare minimum on DS projects while still tinkering with AI ideas on the side.</p>
+    <p><span class="label">Prevention:</span> Don't pick a path your gut has already told you isn't the one.</p>
+  </section>
+
+  <section class="card c-green">
+    <h2>7-Day Test Plan</h2>
+    <div class="day-row"><span class="day-tag">Day 1-2</span><span>Research 3 real AI/ML internship postings and list exact required skills/tools.</span></div>
+    <div class="day-row"><span class="day-tag">Day 3-4</span><span>Ship one small experiment: a focused mini-project that fills a gap you found in Day 1-2.</span></div>
+    <div class="day-row"><span class="day-tag">Day 5-6</span><span>Have one conversation with a senior/mentor/alum working in ML to pressure-test your plan.</span></div>
+    <div class="day-row"><span class="day-tag">Day 7</span><span>Decide: if the mini-project felt energizing and doable alongside your commitments, commit fully to AI/ML.</span></div>
+  </section>
+
+  <section class="card verdict-card">
+    <h2 style="color:var(--accent-gold);">The Verdict</h2>
+    <div class="verdict-name">AI / ML Engineering</div>
+    <p>It wins because it's the only option backed by both genuine interest and existing project momentum — that combination beats "safer" demand numbers over a 2-3 year horizon.</p>
+    <p>What could flip it: if the 7-day test reveals you can't sustain the technical depth alongside your current commitments without burning out.</p>
+    <p class="hard-truth">Chasing the "safest" path when your gut and your track record already point elsewhere isn't caution — it's a slower way of avoiding the real decision.</p>
+  </section>
+
+  <section class="card c-gold">
+    <h2>Shareable Cards</h2>
+    <div class="share-wrap">
+      <div class="mini-card">
+        <div>
+          <h4>Matrix Summary</h4>
+          <p>Data Science: 42/70<br>AI/ML Engineering: 52/70<br>Full-Stack Dev: 45/70</p>
+        </div>
+        <div class="watermark">Built with Claude AI</div>
+      </div>
+      <div class="mini-card">
+        <div>
+          <h4>Verdict</h4>
+          <p>AI/ML Engineering wins — genuine interest + existing momentum beat safety-driven FOMO.</p>
+        </div>
+        <div class="watermark">Built with Claude AI</div>
+      </div>
+      <div class="mini-card">
+        <div>
+          <h4>LinkedIn Hook</h4>
+          <p>"I almost chose safety over passion. Here's how I picked my career path with data, not fear."<br><br>CTA: Follow for the build-in-public journey.</p>
+        </div>
+        <div class="watermark">Built with Claude AI</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Built with Claude AI | ABTalks 60-Day Challenge</footer>
+</div>
+
+<script>
+  const dims = [
+    {label:"Life/Career Upside", a:7, b:9, c:7},
+    {label:"Financial Safety", a:7, b:6, c:8},
+    {label:"Growth & Learning", a:6, b:9, c:6},
+    {label:"Stress Level (10=low)", a:6, b:5, c:7},
+    {label:"Reversibility (10=easy)", a:6, b:6, c:6},
+    {label:"Long-term Alignment", a:5, b:9, c:4},
+    {label:"Regret Risk (10=low)", a:5, b:8, c:7},
+  ];
+  const matrixEl = document.getElementById('matrix');
+  let delay = 0;
+  dims.forEach(d => {
+    const row = document.createElement('div');
+    row.className = 'matrix-row';
+    row.innerHTML = `
+      <div class="matrix-label">${d.label}</div>
+      <div class="matrix-bars">
+        <div class="bar-container"><div class="bar-fill bar-a" style="--target:${d.a*10}%; animation-delay:${delay}s;">${d.a}</div></div>
+        <div class="bar-container"><div class="bar-fill bar-b" style="--target:${d.b*10}%; animation-delay:${delay+0.1}s;">${d.b}</div></div>
+        <div class="bar-container"><div class="bar-fill bar-c" style="--target:${d.c*10}%; animation-delay:${delay+0.2}s;">${d.c}</div></div>
+      </div>
+    `;
+    matrixEl.appendChild(row);
+    delay += 0.1;
+  });
+</script>
+</body>
+</html>
