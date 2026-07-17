@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Intelligence Studio</title>
+<style>
+:root{
+  --ink:#0b0f14;
+  --panel:#11161d;
+  --panel2:#161d26;
+  --line:#232b36;
+  --signal:#3f8cff;
+  --signal-dim:#2a5fb3;
+  --amber:#ffb648;
+  --good:#3ecf8e;
+  --warn:#ffb648;
+  --bad:#ff6b6b;
+  --text:#e7ecf3;
+  --sub:#8b98a9;
+  --mono: 'SF Mono', 'JetBrains Mono', Consolas, monospace;
+  --disp: 'Georgia', 'Iowan Old Style', serif;
+  --body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{color-scheme:dark;}
+body{
+  background:
+    radial-gradient(1100px 600px at 90% -10%, rgba(63,140,255,.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(255,182,72,.06), transparent 60%),
+    var(--ink);
+  color:var(--text);
+  font-family:var(--body);
+  line-height:1.5;
+  min-height:100vh;
+  padding-bottom:80px;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001s !important; transition-duration:.001s !important;}
+}
+a{color:inherit;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+
+/* ---------- HEADER ---------- */
+header.top{
+  border-bottom:1px solid var(--line);
+  padding:26px 0;
+  position:sticky; top:0; z-index:50;
+  background:rgba(11,15,20,.86);
+  backdrop-filter:blur(10px);
+}
+header.top .wrap{display:flex; align-items:center; justify-content:space-between;}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand-mark{
+  width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,var(--signal),var(--signal-dim));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--disp); font-weight:700; font-size:17px; color:#fff;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 6px 18px rgba(63,140,255,.25);
+}
+.brand-name{font-family:var(--disp); font-size:20px; letter-spacing:.2px;}
+.brand-tag{font-size:11px; color:var(--sub); font-family:var(--mono); letter-spacing:.08em; text-transform:uppercase; margin-top:2px;}
+.mode-pill{
+  font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  border:1px solid var(--line); color:var(--sub); padding:6px 12px; border-radius:100px;
+}
+.mode-pill b{color:var(--amber); font-weight:600;}
+
+/* ---------- HERO ---------- */
+.hero{padding:64px 0 40px;}
+.hero .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--signal); margin-bottom:16px;}
+.hero h1{font-family:var(--disp); font-size:44px; line-height:1.12; max-width:780px; font-weight:500;}
+.hero h1 em{font-style:italic; color:var(--signal);}
+.hero p{margin-top:16px; color:var(--sub); max-width:600px; font-size:16px;}
+.brief-chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:24px;}
+.chip{
+  font-size:12px; font-family:var(--mono); padding:7px 12px; border-radius:8px;
+  background:var(--panel); border:1px solid var(--line); color:var(--sub);
+}
+.chip b{color:var(--text);}
+
+/* ---------- UPLOAD PANEL ---------- */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:28px;
+  margin-top:28px;
+}
+.panel h2{font-family:var(--disp); font-size:22px; font-weight:500; margin-bottom:4px;}
+.panel .sub{color:var(--sub); font-size:13px; margin-bottom:20px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+@media (max-width:800px){.grid2{grid-template-columns:1fr;}}
+.field label{
+  display:block; font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--sub); margin-bottom:8px;
+}
+textarea{
+  width:100%; min-height:130px; resize:vertical;
+  background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+  color:var(--text); font-family:var(--body); font-size:14px; padding:14px;
+}
+textarea:focus, input:focus{outline:2px solid var(--signal); outline-offset:1px;}
+.dropzone{
+  border:1.5px dashed var(--line); border-radius:10px; background:var(--panel2);
+  min-height:130px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; cursor:pointer; transition:border-color .15s, background .15s; text-align:center; padding:16px;
+}
+.dropzone:hover, .dropzone.drag{border-color:var(--signal); background:rgba(63,140,255,.05);}
+.dropzone .ic{font-size:22px; color:var(--signal);}
+.dropzone .t1{font-size:13px; color:var(--text);}
+.dropzone .t2{font-size:11px; color:var(--sub); font-family:var(--mono);}
+.thumbs{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+.thumbs .th{position:relative; width:74px; height:74px; border-radius:8px; overflow:hidden; border:1px solid var(--line);}
+.thumbs .th img{width:100%; height:100%; object-fit:cover;}
+.thumbs .th .rm{
+  position:absolute; top:2px; right:2px; background:rgba(0,0,0,.7); color:#fff; border:none;
+  width:18px; height:18px; border-radius:4px; font-size:11px; cursor:pointer; line-height:1;
+}
+input[type=file]{display:none;}
+
+.actions{display:flex; align-items:center; gap:14px; margin-top:24px;}
+.btn{
+  font-family:var(--mono); font-size:13px; letter-spacing:.03em; padding:13px 22px; border-radius:10px;
+  border:none; cursor:pointer; transition:transform .1s, box-shadow .15s; font-weight:600;
+}
+.btn:active{transform:scale(.98);}
+.btn-primary{
+  background:linear-gradient(135deg,var(--signal),#5b6ee8); color:#fff;
+  box-shadow:0 8px 24px rgba(63,140,255,.25);
+}
+.btn-primary:disabled{opacity:.5; cursor:not-allowed;}
+.btn-ghost{background:transparent; border:1px solid var(--line); color:var(--sub);}
+.hint{font-size:12px; color:var(--sub);}
+
+/* ---------- WORKFLOW / ACTIVITY LOG ---------- */
+#workflowSection{display:none;}
+.reviewer-row{
+  display:flex; align-items:center; gap:14px; padding:14px 16px; border:1px solid var(--line);
+  border-radius:10px; background:var(--panel2); margin-bottom:10px;
+}
+.rv-icon{
+  width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:13px; background:var(--panel); border:1px solid var(--line); flex-shrink:0;
+}
+.rv-meta{flex:1; min-width:0;}
+.rv-name{font-size:14px; font-weight:600;}
+.rv-desc{font-size:12px; color:var(--sub); margin-top:2px;}
+.rv-status{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.05em; flex-shrink:0;}
+.rv-status.pending{color:var(--sub);}
+.rv-status.active{color:var(--signal);}
+.rv-status.done{color:var(--good);}
+.rv-status.error{color:var(--bad);}
+.spinner{
+  width:13px; height:13px; border-radius:50%; border:2px solid var(--line); border-top-color:var(--signal);
+  display:inline-block; animation:spin .8s linear infinite; margin-right:6px; vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.log{
+  background:#080b0f; border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  font-family:var(--mono); font-size:12px; color:#8fd6a8; max-height:220px; overflow-y:auto; margin-top:18px;
+}
+.log div{margin-bottom:4px; opacity:0; animation:fadein .3s forwards;}
+@keyframes fadein{to{opacity:1;}}
+.log .t{color:var(--sub); margin-right:8px;}
+
+/* ---------- RESULTS ---------- */
+#resultsSection{display:none;}
+.score-hero{
+  display:grid; grid-template-columns:220px 1fr; gap:32px; align-items:center;
+  padding:32px; background:var(--panel); border:1px solid var(--line); border-radius:16px; margin-top:28px;
+}
+@media (max-width:700px){.score-hero{grid-template-columns:1fr; text-align:center;}}
+.score-ring{position:relative; width:200px; height:200px; margin:0 auto;}
+.score-ring svg{transform:rotate(-90deg);}
+.score-ring .bg{fill:none; stroke:var(--line); stroke-width:12;}
+.score-ring .fg{fill:none; stroke:var(--signal); stroke-width:12; stroke-linecap:round; transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);}
+.score-num{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.score-num .n{font-family:var(--disp); font-size:52px; font-weight:600;}
+.score-num .l{font-family:var(--mono); font-size:10px; color:var(--sub); letter-spacing:.1em; text-transform:uppercase;}
+.score-desc h3{font-family:var(--disp); font-size:24px; font-weight:500; margin-bottom:10px;}
+.score-desc p{color:var(--sub); font-size:14px;}
+.verdict-tag{
+  display:inline-block; font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+  padding:5px 12px; border-radius:100px; margin-bottom:14px; border:1px solid;
+}
+
+.tabs{display:flex; gap:6px; margin-top:32px; border-bottom:1px solid var(--line); overflow-x:auto;}
+.tab{
+  font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--sub);
+  padding:12px 16px; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; flex-shrink:0;
+}
+.tab.active{color:var(--text); border-color:var(--signal);}
+.tabpanel{display:none; padding-top:24px;}
+.tabpanel.active{display:block;}
+
+.cat-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px;}
+.cat-card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px;}
+.cat-card .top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+.cat-card .name{font-size:13px; font-weight:600;}
+.cat-card .sc{font-family:var(--disp); font-size:22px;}
+.bar{height:6px; border-radius:100px; background:var(--line); overflow:hidden; margin-bottom:10px;}
+.bar > div{height:100%; border-radius:100px; background:var(--signal); transition:width 1s ease;}
+.cat-card .note{font-size:12.5px; color:var(--sub);}
+
+.content-block{
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:22px; margin-bottom:16px;
+}
+.content-block h4{
+  font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--signal);
+  margin-bottom:12px; display:flex; align-items:center; gap:8px;
+}
+.content-block .body{font-size:14.5px; color:var(--text); white-space:pre-wrap; line-height:1.65;}
+.content-block .body strong{color:var(--amber);}
+
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:800px){.two-col{grid-template-columns:1fr;}}
+.pill-list{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
+.pill{font-size:12px; padding:6px 12px; border-radius:8px; background:var(--panel2); border:1px solid var(--line);}
+
+.checklist{list-style:none;}
+.checklist li{
+  display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;
+}
+.checklist li:last-child{border:none;}
+.checklist input[type=checkbox]{margin-top:3px; accent-color:var(--signal); width:16px; height:16px;}
+
+.disclaimer{
+  font-size:11.5px; color:var(--sub); border:1px dashed var(--line); border-radius:10px; padding:12px 14px;
+  margin-top:10px; font-family:var(--mono);
+}
+.disclaimer b{color:var(--amber);}
+
+.compare-grid{display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:start;}
+@media (max-width:800px){.compare-grid{grid-template-columns:1fr; }}
+.compare-grid .arrow{display:flex; align-items:center; justify-content:center; color:var(--signal); font-size:20px; padding-top:40px;}
+.compare-col h4{font-family:var(--mono); font-size:11px; text-transform:uppercase; color:var(--sub); margin-bottom:10px;}
+.compare-col.before{border-left:3px solid var(--bad);}
+.compare-col.after{border-left:3px solid var(--good);}
+.compare-col{padding-left:16px;}
+
+.deeper-prompts{display:flex; flex-direction:column; gap:10px;}
+.deeper-prompt{
+  background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  font-size:13.5px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:12px;
+}
+.deeper-prompt:hover{border-color:var(--signal);}
+.deeper-prompt .go{font-family:var(--mono); font-size:11px; color:var(--signal); flex-shrink:0;}
+
+.error-box{
+  background:rgba(255,107,107,.08); border:1px solid rgba(255,107,107,.35); border-radius:10px;
+  padding:16px; color:#ffb0b0; font-size:13.5px; margin-top:16px;
+}
+.error-box .rt{margin-top:10px;}
+
+footer.appfoot{text-align:center; color:var(--sub); font-size:12px; margin-top:60px; font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-mark">CI</div>
+      <div>
+        <div class="brand-name">Content Intelligence Studio</div>
+        <div class="brand-tag">AI Consultant · Live Claude Review</div>
+      </div>
+    </div>
+    <div class="mode-pill">Rigor: <b>Brutally Honest</b></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow">LinkedIn · Educational AI &amp; Data Science Content</div>
+    <h1>Every post has a ceiling. <em>Let's find yours.</em></h1>
+    <p>Upload your post copy, visual, and analytics — a panel of specialized AI reviewers will dissect it against what actually drives engagement, authority, and recruiter attention on LinkedIn, then rebuild it with you.</p>
+    <div class="brief-chips">
+      <div class="chip">Format: <b>Educational AI/DS post</b></div>
+      <div class="chip">Platform: <b>LinkedIn</b></div>
+      <div class="chip">Goal: <b>Engagement + brand + recruiter attention</b></div>
+      <div class="chip">Inputs: <b>Text · Image · Analytics</b></div>
+      <div class="chip">Review mode: <b>Brutally honest</b></div>
+    </div>
+  </section>
+
+  <!-- UPLOAD PANEL -->
+  <section class="panel" id="uploadPanel">
+    <h2>Submit your content</h2>
+    <div class="sub">Add as much as you have — the more inputs, the sharper the diagnosis.</div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="postText">Post copy / caption</label>
+        <textarea id="postText" placeholder="Paste your LinkedIn post text here..."></textarea>
+      </div>
+      <div class="field">
+        <label for="contextText">Context (optional)</label>
+        <textarea id="contextText" placeholder="Anything useful: your role, target audience, what you were trying to say, link to full article, etc."></textarea>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:20px;">
+      <div class="field">
+        <label>Visual (thumbnail / screenshot / carousel image)</label>
+        <div class="dropzone" id="dropImage" tabindex="0" role="button" aria-label="Upload image">
+          <div class="ic">&#9733;</div>
+          <div class="t1">Click or drag an image here</div>
+          <div class="t2">PNG / JPG — analyzed directly by Claude's vision</div>
+        </div>
+        <input type="file" id="imageInput" accept="image/*">
+        <div class="thumbs" id="imageThumbs"></div>
+      </div>
+      <div class="field">
+        <label>Analytics screenshot (impressions, reactions, dwell time, etc.)</label>
+        <div class="dropzone" id="dropAnalytics" tabindex="0" role="button" aria-label="Upload analytics screenshot">
+          <div class="ic">&#128202;</div>
+          <div class="t1">Click or drag analytics screenshot</div>
+          <div class="t2">Optional — sharpens the diagnosis with real performance data</div>
+        </div>
+        <input type="file" id="analyticsInput" accept="image/*">
+        <div class="thumbs" id="analyticsThumbs"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="analyzeBtn">Run AI Review Panel &rarr;</button>
+      <button class="btn btn-ghost" id="clearBtn">Clear all</button>
+      <span class="hint" id="validationHint"></span>
+    </div>
+  </section>
+
+  <!-- WORKFLOW -->
+  <section class="panel" id="workflowSection">
+    <h2>Review panel in progress</h2>
+    <div class="sub">Each specialist reviews independently, then a lead strategist synthesizes the findings.</div>
+    <div id="reviewerList"></div>
+    <div class="log" id="activityLog"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="resultsSection">
+
+    <div class="score-hero">
+      <div class="score-ring">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <circle class="bg" cx="100" cy="100" r="88"/>
+          <circle class="fg" id="scoreArc" cx="100" cy="100" r="88" stroke-dasharray="553" stroke-dashoffset="553"/>
+        </svg>
+        <div class="score-num">
+          <div class="n" id="scoreNum">--</div>
+          <div class="l">Overall Score</div>
+        </div>
+      </div>
+      <div class="score-desc">
+        <span class="verdict-tag" id="verdictTag">Analyzing...</span>
+        <h3 id="verdictHeadline">—</h3>
+        <p id="verdictSub"></p>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabBar">
+      <div class="tab active" data-tab="reasoning">Reasoning</div>
+      <div class="tab" data-tab="breakdown">Category Breakdown</div>
+      <div class="tab" data-tab="swot">Strengths &amp; Gaps</div>
+      <div class="tab" data-tab="rewrite">Rewrite &amp; Hooks</div>
+      <div class="tab" data-tab="checklist">Publishing Checklist</div>
+      <div class="tab" data-tab="report">Final Report</div>
+    </div>
+
+    <div class="tabpanel active" id="tab-reasoning">
+      <div class="content-block">
+        <h4>&#128269; Lead Strategist — Reasoning Chain</h4>
+        <div class="body" id="reasoningBody">—</div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-breakdown">
+      <div class="cat-grid" id="categoryGrid"></div>
+      <div class="content-block" style="margin-top:16px;">
+        <h4>&#128248; Visual / Analytics Review</h4>
+        <div class="body" id="visualBody">—</div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-swot">
+      <div class="two-col">
+        <div class="content-block">
+          <h4>&#9989; Strengths</h4>
+          <div class="body" id="strengthsBody">—</div>
+        </div>
+        <div class="content-block">
+          <h4>&#9888; Weaknesses</h4>
+          <div class="body" id="weaknessesBody">—</div>
+        </div>
+      </div>
+      <div class="content-block">
+        <h4>&#128161; Missed Opportunities</h4>
+        <div class="body" id="opportunitiesBody">—</div>
+      </div>
+      <div class="content-block">
+        <h4>&#127919; Platform-Specific Recommendations (LinkedIn)</h4>
+        <div class="body" id="platformBody">—</div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-rewrite">
+      <div class="content-block">
+        <h4>&#9997; Rewritten Version</h4>
+        <div class="body" id="rewriteBody">—</div>
+      </div>
+      <div class="content-block">
+        <h4>&#127775; Alternative Hooks / Opening Lines</h4>
+        <div class="body" id="hooksBody">—</div>
+      </div>
+      <div class="content-block">
+        <h4>&#128221; Alternative Titles</h4>
+        <div class="body" id="titlesBody">—</div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-checklist">
+      <div class="content-block">
+        <h4>&#9989; Pre-Publish Checklist</h4>
+        <ul class="checklist" id="checklistBody"></ul>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-report">
+      <div class="content-block">
+        <h4>&#128203; Executive Summary</h4>
+        <div class="body" id="execSummaryBody">—</div>
+      </div>
+      <div class="content-block">
+        <h4>&#128200; Predicted Performance Potential</h4>
+        <div class="body" id="predictionBody">—</div>
+        <div class="disclaimer"><b>Note:</b> This is a qualitative AI estimate based on content patterns, not a guaranteed metric or platform data.</div>
+      </div>
+      <div class="content-block">
+        <h4>Before vs. After</h4>
+        <div class="compare-grid">
+          <div class="compare-col before">
+            <h4>Before</h4>
+            <div class="body" id="beforeBody">—</div>
+          </div>
+          <div class="arrow">&rarr;</div>
+          <div class="compare-col after">
+            <h4>After</h4>
+            <div class="body" id="afterBody">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="content-block">
+        <h4>&#9889; Highest-Impact Improvements</h4>
+        <div class="body" id="impactBody">—</div>
+      </div>
+      <div class="content-block">
+        <h4>&#128172; Go Deeper</h4>
+        <div class="sub" style="margin-bottom:12px;">Click a prompt to run a focused follow-up analysis.</div>
+        <div class="deeper-prompts" id="deeperPrompts"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <div id="errorContainer"></div>
+
+  <footer class="appfoot">Content Intelligence Studio — all analysis generated live via the Claude API. No canned feedback, no fixed rules.</footer>
+</div>
+
+<script>
+(function(){
+
+const API_URL = "https://api.anthropic.com/v1/messages";
+const MODEL = "claude-sonnet-4-6";
+
+let state = {
+  postText: "",
+  contextText: "",
+  imageBase64: null, imageMedia: null,
+  analyticsBase64: null, analyticsMedia: null,
+  reviewOutputs: {},
+};
+
+// ---------- Upload handling ----------
+function setupDrop(dropId, inputId, thumbsId, kind){
+  const drop = document.getElementById(dropId);
+  const input = document.getElementById(inputId);
+  const thumbs = document.getElementById(thumbsId);
+
+  drop.addEventListener('click', ()=> input.click());
+  drop.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') input.click(); });
+  drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', ()=> drop.classList.remove('drag'));
+  drop.addEventListener('drop', e=>{
+    e.preventDefault(); drop.classList.remove('drag');
+    if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change', e=>{
+    if(e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file){
+    if(!file.type.startsWith('image/')){ alert('Please upload an image file.'); return; }
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      const dataUrl = ev.target.result;
+      const base64 = dataUrl.split(',')[1];
+      const mediaType = file.type;
+      if(kind === 'content'){ state.imageBase64 = base64; state.imageMedia = mediaType; }
+      else { state.analyticsBase64 = base64; state.analyticsMedia = mediaType; }
+      thumbs.innerHTML = '';
+      const th = document.createElement('div'); th.className='th';
+      th.innerHTML = `<img src="${dataUrl}" alt="uploaded"><button class="rm" aria-label="remove">✕</button>`;
+      th.querySelector('.rm').addEventListener('click', (ev2)=>{
+        ev2.stopPropagation();
+        thumbs.innerHTML = '';
+        if(kind==='content'){ state.imageBase64=null; state.imageMedia=null; }
+        else { state.analyticsBase64=null; state.analyticsMedia=null; }
+        input.value = '';
+      });
+      thumbs.appendChild(th);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+setupDrop('dropImage','imageInput','imageThumbs','content');
+setupDrop('dropAnalytics','analyticsInput','analyticsThumbs','analytics');
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  document.getElementById('postText').value = '';
+  document.getElementById('contextText').value = '';
+  document.getElementById('imageThumbs').innerHTML = '';
+  document.getElementById('analyticsThumbs').innerHTML = '';
+  document.getElementById('imageInput').value = '';
+  document.getElementById('analyticsInput').value = '';
+  state = {postText:"",contextText:"",imageBase64:null,imageMedia:null,analyticsBase64:null,analyticsMedia:null,reviewOutputs:{}};
+  document.getElementById('validationHint').textContent = '';
+});
+
+// ---------- Claude API call helper ----------
+async function callClaude(systemPrompt, userContentBlocks, maxRetries=2){
+  let attempt = 0;
+  let lastErr = null;
+  while(attempt <= maxRetries){
+    try{
+      const resp = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 1600,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userContentBlocks }]
+        })
+      });
+      if(!resp.ok){
+        const errText = await resp.text();
+        throw new Error(`API error ${resp.status}: ${errText.slice(0,300)}`);
+      }
+      const raw = await resp.text();
+      let text = "";
+      try{
+        const parsed = JSON.parse(raw);
+        if(parsed && parsed.content && Array.isArray(parsed.content)){
+          text = parsed.content.filter(b=>b.type==='text').map(b=>b.text).join('\n\n');
+        } else {
+          text = raw;
+        }
+      }catch(e){
+        text = raw;
+      }
+      if(!text || !text.trim()){
+        throw new Error("Empty response from model.");
+      }
+      return text.trim();
+    }catch(err){
+      lastErr = err;
+      attempt++;
+      if(attempt <= maxRetries){
+        logActivity(`Retrying after error: ${err.message}`, true);
+        await new Promise(r=>setTimeout(r, 900*attempt));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+function buildUserBlocks(promptText, includeImage, includeAnalytics){
+  const blocks = [];
+  if(includeImage && state.imageBase64){
+    blocks.push({ type:"image", source:{ type:"base64", media_type: state.imageMedia, data: state.imageBase64 } });
+  }
+  if(includeAnalytics && state.analyticsBase64){
+    blocks.push({ type:"image", source:{ type:"base64", media_type: state.analyticsMedia, data: state.analyticsBase64 } });
+  }
+  blocks.push({ type:"text", text: promptText });
+  return blocks;
+}
+
+// ---------- Activity log ----------
+function logActivity(msg, isWarn){
+  const log = document.getElementById('activityLog');
+  const line = document.createElement('div');
+  const time = new Date().toLocaleTimeString();
+  line.innerHTML = `<span class="t">[${time}]</span>${isWarn ? '⚠ ' : '› '}${escapeHtml(msg)}`;
+  if(isWarn) line.style.color = '#ffb648';
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderText(el, text){
+  document.getElementById(el).textContent = text;
+}
+
+// ---------- Reviewer definitions ----------
+const CRITICALITY = "very critical, brutally honest, agency-level rigor — do not soften feedback to be nice, call out real weaknesses plainly, but remain professional and constructive with a path forward";
+
+const baseContext = () => {
+  let ctx = `PLATFORM: LinkedIn\nCONTENT TYPE: Educational AI & Data Science post\nCREATOR GOAL: increase engagement, strengthen personal brand, attract recruiter attention, optimize overall content performance\nREVIEW RIGOR: ${CRITICALITY}\n\nPOST COPY:\n${state.postText || "(no text provided)"}\n\nADDITIONAL CONTEXT FROM CREATOR:\n${state.contextText || "(none provided)"}`;
+  return ctx;
+};
+
+const reviewers = [
+  {
+    id:"hook", icon:"🪝", name:"Hook & Opening Line Specialist",
+    desc:"Judges the first 2 lines against LinkedIn's feed truncation and scroll-stopping mechanics.",
+    system: `You are a world-class LinkedIn hook specialist who has studied thousands of viral educational AI/Data Science posts. You evaluate only the opening 1-3 lines of a post for scroll-stopping power, curiosity gap, and specificity. Be ${CRITICALITY}. Respond in plain prose only, no JSON, no markdown code fences. Keep your response focused and under 180 words.`,
+    prompt: () => `${baseContext()}\n\nEvaluate the hook/opening lines specifically. Give a score out of 10 for the hook, explain your reasoning, and note exactly why it will or won't stop the scroll.`
+  },
+  {
+    id:"structure", icon:"🧱", name:"Structure & Readability Reviewer",
+    desc:"Assesses formatting, whitespace, scannability, and narrative flow for mobile LinkedIn feeds.",
+    system: `You are a LinkedIn content structure and readability expert specializing in educational technical content. You judge line breaks, whitespace, paragraph length, use of lists, and overall scannability on mobile. Be ${CRITICALITY}. Plain prose only, no JSON, no code fences. Under 180 words.`,
+    prompt: () => `${baseContext()}\n\nEvaluate structure and readability. Score out of 10, and explain what specifically helps or hurts scannability on a mobile LinkedIn feed.`
+  },
+  {
+    id:"technical", icon:"🧪", name:"Technical Credibility Auditor",
+    desc:"Checks accuracy, depth, and rigor of the AI/Data Science claims for a technically literate audience.",
+    system: `You are a senior AI/ML practitioner and technical editor who audits educational AI and Data Science content for accuracy, depth, and intellectual honesty. You penalize oversimplification, buzzword-stuffing, and unsubstantiated claims. Be ${CRITICALITY}. Plain prose only, no JSON, no code fences. Under 200 words.`,
+    prompt: () => `${baseContext()}\n\nAudit the technical credibility and depth of this content for a technically literate audience. Score out of 10 and explain specific claims or phrasing that help or hurt credibility.`
+  },
+  {
+    id:"branding", icon:"💼", name:"Personal Branding & Recruiter-Appeal Strategist",
+    desc:"Evaluates authority-building and how the post reads to a hiring manager or recruiter skimming a profile.",
+    system: `You are a personal branding strategist for tech professionals, specializing in how content reads to recruiters and hiring managers browsing LinkedIn profiles. You evaluate authority signaling, perceived seniority, and memorability. Be ${CRITICALITY}. Plain prose only, no JSON, no code fences. Under 200 words.`,
+    prompt: () => `${baseContext()}\n\nEvaluate this post's impact on personal brand and recruiter appeal. Score out of 10 and explain what a recruiter or hiring manager skimming this would conclude about the author.`
+  },
+  {
+    id:"engagement", icon:"📣", name:"Engagement Mechanics Analyst",
+    desc:"Analyzes CTAs, comment-bait, dwell-time triggers, and shareability drivers.",
+    system: `You are a LinkedIn engagement mechanics analyst who reverse-engineers what drives comments, shares, and dwell time on educational posts. You are skeptical of generic engagement bait and reward genuine discussion triggers. Be ${CRITICALITY}. Plain prose only, no JSON, no code fences. Under 180 words.`,
+    prompt: () => `${baseContext()}\n\nAnalyze the engagement mechanics: likelihood of comments, shares, and saves. Score out of 10 and explain exactly why, referencing specific lines or the lack of a clear engagement trigger.`
+  },
+  {
+    id:"visual", icon:"🖼️", name:"Visual & Analytics Reviewer",
+    desc:"Directly analyzes any uploaded image/thumbnail and analytics screenshot.",
+    system: `You are a visual content and analytics reviewer for LinkedIn posts. When given an image, describe exactly what you see and evaluate its design, clarity, and thumb-stopping power for a feed context. When given an analytics screenshot, extract and interpret the visible numbers (impressions, reactions, comments, dwell time, etc.) and explain what they reveal about real performance. Be ${CRITICALITY}. Plain prose only, no JSON, no code fences. Under 220 words.`,
+    prompt: () => `${baseContext()}\n\nIf an image is attached that is the post's visual/thumbnail, analyze its visual design and effectiveness in detail. If an image is attached that is an analytics screenshot, read the actual numbers shown and interpret real performance. If both are attached, address both clearly in separate short sections. If neither is attached, say plainly that no visual was provided and explain what kind of visual would strengthen this post.`,
+    needsImages: true
+  }
+];
+
+// ---------- Orchestration ----------
+async function runReviewPanel(){
+  document.getElementById('uploadPanel').style.display = 'none';
+  document.getElementById('workflowSection').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorContainer').innerHTML = '';
+
+  const list = document.getElementById('reviewerList');
+  list.innerHTML = '';
+  reviewers.forEach(r=>{
+    const row = document.createElement('div');
+    row.className = 'reviewer-row';
+    row.id = `rvrow-${r.id}`;
+    row.innerHTML = `
+      <div class="rv-icon">${r.icon}</div>
+      <div class="rv-meta">
+        <div class="rv-name">${r.name}</div>
+        <div class="rv-desc">${r.desc}</div>
+      </div>
+      <div class="rv-status pending" id="rvstatus-${r.id}">Queued</div>
+    `;
+    list.appendChild(row);
+  });
+
+  document.getElementById('activityLog').innerHTML = '';
+  logActivity('Initializing review panel for LinkedIn educational AI/DS content...');
+  logActivity(`Inputs detected: ${state.postText ? 'post copy ✓' : 'no post copy'}, ${state.imageBase64 ? 'visual ✓' : 'no visual'}, ${state.analyticsBase64 ? 'analytics ✓' : 'no analytics'}`);
+
+  for(const r of reviewers){
+    const statusEl = document.getElementById(`rvstatus-${r.id}`);
+    statusEl.className = 'rv-status active';
+    statusEl.innerHTML = '<span class="spinner"></span>Reviewing';
+    logActivity(`${r.name} starting review...`);
+    try{
+      const blocks = buildUserBlocks(r.prompt(), r.needsImages, r.needsImages);
+      const output = await callClaude(r.system, blocks);
+      state.reviewOutputs[r.id] = output;
+      statusEl.className = 'rv-status done';
+      statusEl.textContent = 'Complete';
+      logActivity(`${r.name} finished.`);
+    }catch(err){
+      statusEl.className = 'rv-status error';
+      statusEl.textContent = 'Failed';
+      state.reviewOutputs[r.id] = `(This reviewer failed to return a result: ${err.message})`;
+      logActivity(`${r.name} failed: ${err.message}`, true);
+    }
+  }
+
+  // Lead strategist synthesis
+  logActivity('Lead Strategist synthesizing final report...');
+  try{
+    const synthSystem = `You are the Lead Content Strategist synthesizing feedback from five specialist AI reviewers (hook, structure, technical credibility, personal branding/recruiter appeal, engagement mechanics, and visual/analytics) into one authoritative, ${CRITICALITY} final assessment for a LinkedIn educational AI/Data Science post. You must output your response as clearly labeled plain-text sections, in this EXACT order, each starting with the section title in all caps followed by a colon on its own line, with no markdown formatting, no JSON, no code fences, no asterisks for bold — just clean plain text paragraphs or simple hyphen bullet lists where useful:
+
+OVERALL SCORE: (a single integer 0-100 representing overall content quality and performance potential, nothing else on this line except the number)
+VERDICT: (one short punchy phrase, 3-6 words, capturing the verdict, e.g. "Solid bones, forgettable delivery")
+VERDICT SUMMARY: (2-3 sentences expanding on the verdict)
+REASONING: (a detailed reasoning chain, 200-350 words, explaining how you weighed the specialist reviews into the overall score, referencing specific findings)
+CATEGORY SCORES: (list exactly these five categories each on its own line in format "Name | score out of 10 | one sentence justification": Hook Strength, Structure & Readability, Technical Credibility, Personal Branding Impact, Engagement Mechanics)
+VISUAL AND ANALYTICS SUMMARY: (150-220 words synthesizing the visual/analytics reviewer's findings; if no visuals were provided, state that clearly and note the impact of their absence)
+STRENGTHS: (3-5 hyphen bullet points, specific not generic)
+WEAKNESSES: (3-5 hyphen bullet points, specific and brutally honest)
+MISSED OPPORTUNITIES: (3-5 hyphen bullet points on what could have been included but wasn't)
+PLATFORM RECOMMENDATIONS: (150-220 words of LinkedIn-specific tactical recommendations for this exact post)
+REWRITE: (a full rewritten version of the post, ready to publish, that fixes the identified weaknesses while preserving the author's voice and core message)
+ALTERNATIVE HOOKS: (5 alternative opening lines, each on its own hyphen bullet line)
+ALTERNATIVE TITLES: (5 alternative post titles/headlines if applicable, each on its own hyphen bullet line; if the format has no title, provide 5 alternative first-sentence hooks instead)
+PUBLISHING CHECKLIST: (6-9 concrete pre-publish checklist items, each on its own hyphen bullet line, specific to this post's actual gaps)
+EXECUTIVE SUMMARY: (120-180 words, C-suite style summary of overall content health)
+PREDICTED PERFORMANCE: (100-160 words describing qualitative predicted performance potential — e.g. relative engagement tier, likely audience reaction — explicitly framed as an AI estimate, not a guarantee, and not fabricated hard numbers like exact impression counts)
+HIGHEST IMPACT IMPROVEMENTS: (3 hyphen bullet points, ranked, on the single highest-leverage changes to make)
+BEFORE SNAPSHOT: (2-3 sentence snapshot describing the original post's current state)
+AFTER SNAPSHOT: (2-3 sentence snapshot describing what the improved version achieves)
+DEEPER PROMPTS: (4 hyphen bullet lines, each a short follow-up question/prompt the creator could ask next for deeper optimization, e.g. about carousel formats, comment strategy, or series planning)
+
+Follow this structure exactly and do not omit any section, even if a section must say information was unavailable.`;
+
+    const synthUserText = `${baseContext()}\n\nSPECIALIST REVIEWER FINDINGS:\n\n--- HOOK & OPENING LINE SPECIALIST ---\n${state.reviewOutputs.hook}\n\n--- STRUCTURE & READABILITY REVIEWER ---\n${state.reviewOutputs.structure}\n\n--- TECHNICAL CREDIBILITY AUDITOR ---\n${state.reviewOutputs.technical}\n\n--- PERSONAL BRANDING & RECRUITER-APPEAL STRATEGIST ---\n${state.reviewOutputs.branding}\n\n--- ENGAGEMENT MECHANICS ANALYST ---\n${state.reviewOutputs.engagement}\n\n--- VISUAL & ANALYTICS REVIEWER ---\n${state.reviewOutputs.visual}\n\nNow produce the final synthesized report following the exact section structure given in your system instructions.`;
+
+    const finalReport = await callClaude(synthSystem, [{type:"text", text:synthUserText}], 2);
+    state.finalReportRaw = finalReport;
+    logActivity('Lead Strategist synthesis complete. Rendering dashboard...');
+    renderResults(finalReport);
+  }catch(err){
+    logActivity(`Lead Strategist synthesis failed: ${err.message}`, true);
+    showError(err.message);
+    return;
+  }
+
+  document.getElementById('resultsSection').style.display = 'block';
+  document.getElementById('resultsSection').scrollIntoView({behavior:'smooth'});
+}
+
+function showError(msg){
+  const c = document.getElementById('errorContainer');
+  c.innerHTML = `<div class="error-box">
+    <strong>Something went wrong reaching the AI review panel.</strong><br>${escapeHtml(msg)}
+    <div class="rt"><button class="btn btn-ghost" onclick="location.reload()">Reload &amp; try again</button></div>
+  </div>`;
+}
+
+// ---------- Section parser (plain text, no JSON) ----------
+function parseSections(text){
+  const sectionNames = [
+    "OVERALL SCORE","VERDICT","VERDICT SUMMARY","REASONING","CATEGORY SCORES",
+    "VISUAL AND ANALYTICS SUMMARY","STRENGTHS","WEAKNESSES","MISSED OPPORTUNITIES",
+    "PLATFORM RECOMMENDATIONS","REWRITE","ALTERNATIVE HOOKS","ALTERNATIVE TITLES",
+    "PUBLISHING CHECKLIST","EXECUTIVE SUMMARY","PREDICTED PERFORMANCE",
+    "HIGHEST IMPACT IMPROVEMENTS","BEFORE SNAPSHOT","AFTER SNAPSHOT","DEEPER PROMPTS"
+  ];
+  const result = {};
+  // Build regex to split by "SECTION NAME:" at line start
+  const pattern = new RegExp(`^(${sectionNames.join('|')}):\\s*$`, 'm');
+  // Simpler: find index of each label occurrence
+  let indices = [];
+  sectionNames.forEach(name=>{
+    const re = new RegExp(`(^|\\n)${name}:\\s*`, 'i');
+    const m = text.match(re);
+    if(m){
+      indices.push({name, idx: m.index + m[0].length});
+    }
+  });
+  indices.sort((a,b)=>a.idx-b.idx);
+  for(let i=0;i<indices.length;i++){
+    const start = indices[i].idx;
+    const end = i+1 < indices.length ? indices[i+1].idx - (indices[i+1].name.length + 2) : text.length;
+    let chunk = text.substring(start, end).trim();
+    result[indices[i].name] = chunk;
+  }
+  return result;
+}
+
+function bulletsToHtml(str){
+  if(!str) return '—';
+  const lines = str.split('\n').map(l=>l.trim()).filter(Boolean);
+  const bullets = lines.filter(l=>/^-|^•/.test(l));
+  if(bullets.length >= 2){
+    return bullets.map(l=>l.replace(/^[-•]\s*/, '')).join('\n\n');
+  }
+  return str;
+}
+
+function renderResults(raw){
+  const s = parseSections(raw);
+
+  // Score
+  let score = parseInt((s["OVERALL SCORE"]||'').match(/\d+/)?.[0] || '0', 10);
+  score = Math.max(0, Math.min(100, score));
+  document.getElementById('scoreNum').textContent = score;
+  const circumference = 553;
+  const offset = circumference - (circumference * score/100);
+  const arc = document.getElementById('scoreArc');
+  let arcColor = 'var(--bad)';
+  if(score >= 75) arcColor = 'var(--good)';
+  else if(score >= 50) arcColor = 'var(--signal)';
+  else if(score >= 30) arcColor = 'var(--warn)';
+  arc.style.stroke = arcColor;
+  setTimeout(()=>{ arc.style.strokeDashoffset = offset; }, 100);
+
+  const verdictTag = document.getElementById('verdictTag');
+  verdictTag.textContent = s["VERDICT"] || (score>=70?'Strong':score>=45?'Needs Work':'Weak');
+  verdictTag.style.color = arcColor;
+  verdictTag.style.borderColor = arcColor;
+  document.getElementById('verdictHeadline').textContent = s["VERDICT"] || '—';
+  document.getElementById('verdictSub').textContent = s["VERDICT SUMMARY"] || '';
+
+  document.getElementById('reasoningBody').textContent = s["REASONING"] || 'No reasoning returned.';
+
+  // Category grid
+  const catGrid = document.getElementById('categoryGrid');
+  catGrid.innerHTML = '';
+  const catLines = (s["CATEGORY SCORES"]||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  catLines.forEach(line=>{
+    const parts = line.replace(/^-+\s*/,'').split('|').map(p=>p.trim());
+    if(parts.length < 2) return;
+    const name = parts[0];
+    const scoreMatch = (parts[1]||'').match(/\d+/);
+    const catScore = scoreMatch ? parseInt(scoreMatch[0],10) : 0;
+    const note = parts[2] || '';
+    const pct = Math.min(100, catScore*10);
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.innerHTML = `
+      <div class="top"><div class="name">${escapeHtml(name)}</div><div class="sc">${catScore}/10</div></div>
+      <div class="bar"><div style="width:0%" data-pct="${pct}"></div></div>
+      <div class="note">${escapeHtml(note)}</div>
+    `;
+    catGrid.appendChild(card);
+    setTimeout(()=>{ card.querySelector('.bar > div').style.width = pct+'%'; }, 150);
+  });
+
+  document.getElementById('visualBody').textContent = s["VISUAL AND ANALYTICS SUMMARY"] || 'No visual analysis returned.';
+  document.getElementById('strengthsBody').textContent = bulletsToHtml(s["STRENGTHS"]);
+  document.getElementById('weaknessesBody').textContent = bulletsToHtml(s["WEAKNESSES"]);
+  document.getElementById('opportunitiesBody').textContent = bulletsToHtml(s["MISSED OPPORTUNITIES"]);
+  document.getElementById('platformBody').textContent = s["PLATFORM RECOMMENDATIONS"] || '—';
+  document.getElementById('rewriteBody').textContent = s["REWRITE"] || '—';
+  document.getElementById('hooksBody').textContent = bulletsToHtml(s["ALTERNATIVE HOOKS"]);
+  document.getElementById('titlesBody').textContent = bulletsToHtml(s["ALTERNATIVE TITLES"]);
+
+  const checklistBody = document.getElementById('checklistBody');
+  checklistBody.innerHTML = '';
+  const items = (s["PUBLISHING CHECKLIST"]||'').split('\n').map(l=>l.replace(/^[-•]\s*/,'').trim()).filter(Boolean);
+  items.forEach((item,i)=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<input type="checkbox" id="chk${i}"><label for="chk${i}">${escapeHtml(item)}</label>`;
+    checklistBody.appendChild(li);
+  });
+
+  document.getElementById('execSummaryBody').textContent = s["EXECUTIVE SUMMARY"] || '—';
+  document.getElementById('predictionBody').textContent = s["PREDICTED PERFORMANCE"] || '—';
+  document.getElementById('beforeBody').textContent = s["BEFORE SNAPSHOT"] || '—';
+  document.getElementById('afterBody').textContent = s["AFTER SNAPSHOT"] || '—';
+  document.getElementById('impactBody').textContent = bulletsToHtml(s["HIGHEST IMPACT IMPROVEMENTS"]);
+
+  const deeperContainer = document.getElementById('deeperPrompts');
+  deeperContainer.innerHTML = '';
+  const deeper = (s["DEEPER PROMPTS"]||'').split('\n').map(l=>l.replace(/^[-•]\s*/,'').trim()).filter(Boolean);
+  deeper.forEach(prompt=>{
+    const div = document.createElement('div');
+    div.className = 'deeper-prompt';
+    div.innerHTML = `<span>${escapeHtml(prompt)}</span><span class="go">Run &rarr;</span>`;
+    div.addEventListener('click', ()=> runDeeperPrompt(prompt));
+    deeperContainer.appendChild(div);
+  });
+}
+
+async function runDeeperPrompt(promptText){
+  const container = document.getElementById('deeperPrompts');
+  const box = document.createElement('div');
+  box.className = 'content-block';
+  box.style.marginTop = '14px';
+  box.innerHTML = `<h4>&#8618; ${escapeHtml(promptText)}</h4><div class="body"><span class="spinner"></span> Thinking...</div>`;
+  container.parentElement.appendChild(box);
+  box.scrollIntoView({behavior:'smooth', block:'center'});
+  try{
+    const system = `You are the Lead Content Strategist continuing a consultation on a LinkedIn educational AI/Data Science post. Answer the specific follow-up question directly and practically, in plain prose, no markdown, no JSON, no code fences. Be ${CRITICALITY}. Keep it under 250 words.`;
+    const userText = `${baseContext()}\n\nPREVIOUS FULL REPORT:\n${state.finalReportRaw}\n\nFOLLOW-UP QUESTION FROM CREATOR:\n${promptText}`;
+    const answer = await callClaude(system, [{type:"text", text:userText}], 2);
+    box.querySelector('.body').textContent = answer;
+  }catch(err){
+    box.querySelector('.body').textContent = `Failed to get a response: ${err.message}`;
+  }
+}
+
+// ---------- Tabs ----------
+document.getElementById('tabBar').addEventListener('click', e=>{
+  const tab = e.target.closest('.tab');
+  if(!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+});
+
+// ---------- Main trigger ----------
+document.getElementById('analyzeBtn').addEventListener('click', ()=>{
+  state.postText = document.getElementById('postText').value.trim();
+  state.contextText = document.getElementById('contextText').value.trim();
+
+  if(!state.postText && !state.imageBase64){
+    document.getElementById('validationHint').textContent = 'Add post text or an image before running the review.';
+    document.getElementById('validationHint').style.color = 'var(--bad)';
+    return;
+  }
+  document.getElementById('validationHint').textContent = '';
+  runReviewPanel();
+});
+
+})();
+</script>
+</body>
+</html>
